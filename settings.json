@@ -1,0 +1,5 @@
+{
+    "dataset_path": "/home/mszul/datasets/explicit_implicit_beta",
+    "downsample_head": 125,
+    "downsample_dataset": 600
+}
