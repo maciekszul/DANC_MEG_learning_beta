@@ -32,3 +32,15 @@ def resamp_interp(x, y, new_x):
     resamp = interp1d(x, y, kind='linear', fill_value='extrapolate')
     new_data = resamp(new_x)
     return new_data
+
+
+def cart2pol(x, y):
+    radius = np.sqrt(x**2 + y**2)
+    angle = np.arctan2(y, x)
+    return [radius, angle]
+
+
+def pol2cart(radius, angle):
+    x = radius * np.cos(angle)
+    y = radius * np.sin(angle)
+    return [x, y]

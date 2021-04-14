@@ -36,6 +36,7 @@ proc_path = op.join(der_path, "processed")
 files.make_folder(proc_path)
 
 subjects = files.get_folders_files(sub_path)[0]
+subjects.sort()
 subject = subjects[index]
 subject_id = subject.split("/")[-1]
 
@@ -54,21 +55,22 @@ event_paths.sort()
 
 raw_eve_list = list(zip(raw_paths, event_paths))
 
-for raw_path, eve_path in [raw_eve_list[0]]:
-# for raw_path, eve_path in raw_eve_list:
+# for raw_path, eve_path in [raw_eve_list[0]]:
+for raw_path, eve_path in raw_eve_list:
     print("INPUT RAW FILE:", raw_path)
     print("EVE_RAW MATCH:", raw_path.split("-")[-2] == eve_path.split("-")[-2])
     numero = str(raw_path.split("-")[-2]).zfill(3)
     
     raw = mne.io.read_raw_fif(raw_path, verbose=False)
     # raw = raw.apply_gradient_compensation(2, verbose=True)
-    raw = raw.pick_types(meg=True, eeg=False, ref_meg=False)
-    fig = raw.plot_psd(tmax=np.inf, fmax=260, average=True, show=False)
+    raw = raw.pick_types(meg=True, eeg=False, ref_meg=True)
+    fig = raw.plot_psd(
+        tmax=np.inf, fmax=260, average=True, show=False, picks="meg"
+    )
     fig.suptitle(subject_id)
     plt.savefig(
         op.join(qc_folder, "{}-{}-raw-psd.png".format(subject_id, numero)),
-        dpi=150, 
-        bbox_inches="tight"
+        dpi=150, bbox_inches="tight"
     )
     plt.close("all")
     
@@ -89,6 +91,15 @@ for raw_path, eve_path in [raw_eve_list[0]]:
             600.0,
             nremove=10
         )
+        del artifact
+        
+        zapped, artifact = mk.dss.dss_line(
+            zapped,
+            60.0,
+            600.0,
+            nremove=10
+        )
+
         del artifact
         output.append(zapped)
     # recreating the data structure

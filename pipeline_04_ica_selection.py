@@ -12,6 +12,7 @@ from tools import update_key_value, dump_the_dict, resamp_interp
 from ecgdetectors import Detectors
 from scipy.interpolate import interp1d
 from scipy.stats import pearsonr
+import gc
 
 
 # parsing command line arguments
@@ -42,6 +43,7 @@ proc_path = op.join(der_path, "processed")
 files.make_folder(proc_path)
 
 subjects = files.get_folders_files(sub_path)[0]
+subjects.sort()
 subject = subjects[index]
 subject_id = subject.split("/")[-1]
 
@@ -89,7 +91,7 @@ ecg_file_path = op.join(
 
 ds = Detectors(sfreq)
 
-# for (raw_path, ica_key, edf_path) in [raw_ica_edf[0]]:
+# for (raw_path, ica_key, edf_path) in [raw_ica_edf[2]]:
 for (raw_path, ica_key, edf_path) in raw_ica_edf:
     ica_path = op.join(
         sub_path,
@@ -97,14 +99,23 @@ for (raw_path, ica_key, edf_path) in raw_ica_edf:
     )
     numero = str(raw_path.split("-")[-2]).zfill(3)
     
+
+    try:
+        if numero == "001":
+            raise Exception
+    except Exception:
+        continue
+
     print("INPUT RAW FILE:", raw_path)
     print("INPUT ICA FILE:", ica_path)
     print("INPUT EDF FILE:", edf_path)
+    
     raw = mne.io.read_raw_fif(
         raw_path,
         verbose=False,
         preload=True
     )
+
     ica = mne.preprocessing.read_ica(
         ica_path,
         verbose=False
@@ -114,16 +125,29 @@ for (raw_path, ica_key, edf_path) in raw_ica_edf:
     raw.close()
 
     ica_com = ica.get_sources(raw)
+    raw = None
+    gc.collect()
     ica_times = ica_com.times
     ica_data = ica_com.get_data()
     ica_com.close()
+    ica_com = None
+    gc.collect()
+
 
     # https://github.com/berndporr/py-ecg-detectors
     # variance of the distance between detected R peaks
+    # if the variance is not distinct enough from the 1 percentile,
+    # signal has to be found manually, indicated as 666 in the first item
+    # of the list.
     r_hr = [ds.hamilton_detector(ica_data[i]) for i in range(ica_data.shape[0])]
     r_hr = [np.var(np.diff(i)) for i in r_hr]
     ecg_out[ica_key] = r_hr
-    hr = np.argmin(r_hr) 
+    r_hr = np.array(r_hr)
+
+    if (np.percentile(r_hr, 1) - np.min(r_hr)) > 500:
+        hr = list(np.where(r_hr < np.percentile(r_hr, 1))[0])
+    else:
+        hr = [666]
 
     samples, events, messages = edf.pread(edf_path)
     eye = ["left", "right"][events.eye.unique()[0]]
@@ -153,14 +177,19 @@ for (raw_path, ica_key, edf_path) in raw_ica_edf:
     gy = resamp_interp(samples_times, gy, ica_times)
     
     # gx, gy is a gaze screen position, EyeLink recorded blinks as position way
-    # outside of the screen, thus safe threshold of 2000 to detect blinks. 
+    # outside of the screen, thus safe threshold to detect blinks. 
     # dependent on the screen resolution.
-    blink_ix = np.where(gy > 2000)[0]
+    blink_ix = np.where(gy > 1500)[0]
 
     clean_gx = np.copy(gx)
     clean_gy = np.copy(gy)
-    clean_gx[blink_ix] = np.nan
-    clean_gy[blink_ix] = np.nan
+    gx_iqr = np.percentile(gx, [25, 50])
+    gy_iqr = np.percentile(gx, [25, 50])
+    gx_iqr_med = np.median(gx[np.where((gx>gx_iqr[0]) & (gx<gx_iqr[1]))[0]])
+    gy_iqr_med = np.median(gy[np.where((gy>gy_iqr[0]) & (gy<gy_iqr[1]))[0]])
+
+    clean_gx[blink_ix] = gx_iqr_med
+    clean_gy[blink_ix] = gy_iqr_med
 
     clean_gx = pd.Series(clean_gx).interpolate().to_numpy()
     clean_gy = pd.Series(clean_gy).interpolate().to_numpy()
@@ -173,13 +202,13 @@ for (raw_path, ica_key, edf_path) in raw_ica_edf:
         out = [pearsonr(j, ica_data[i]) for j in [gx, gy, clean_gx, clean_gy]]
         comp.append(out)
         results = np.array(out)
-        if np.average(np.abs(results[:,0]) > 0.1) >=0.25:
+        if np.average(np.abs(results[:,0]) > 0.15) >=0.25:
             ica_eog.append(i)
     eog_out[ica_key] = comp
 
 
     # all the numbers have to be integers
-    ica_eog.insert(0, hr)
+    ica_eog = hr + ica_eog
     ica_eog = [int(i) for i in ica_eog]
 
     # update of the key values

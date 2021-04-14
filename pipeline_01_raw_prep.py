@@ -34,6 +34,7 @@ proc_path = op.join(der_path, "processed")
 files.make_folder(proc_path)
 
 subjects = files.get_folders_files(sub_path)[0]
+subjects.sort()
 subject = subjects[index]
 subject_id = subject.split("/")[-1]
 
@@ -96,6 +97,8 @@ for ds in dss:
         overwrite=True)
 
     print("RAW SAVED:", raw_path)
+    
+    raw.close()
 
     mne.write_events(
         eve_path,

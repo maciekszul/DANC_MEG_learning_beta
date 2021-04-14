@@ -3,7 +3,9 @@ import json
 import numpy as np
 import pandas as pd
 import mne
+import os
 import os.path as op
+import subprocess as sp
 from utilities import files
 import matplotlib.pylab as plt
 
@@ -40,6 +42,7 @@ proc_path = op.join(der_path, "processed")
 files.make_folder(proc_path)
 
 subjects = files.get_folders_files(sub_path)[0]
+subjects.sort()
 subject = subjects[index]
 subject_id = subject.split("/")[-1]
 
@@ -53,3 +56,40 @@ files.make_folder(qc_folder)
 
 raw_paths = files.get_files(sub_path, "zapline-" + subject_id, "-raw.fif")[2]
 raw_paths.sort()
+raw_path = raw_paths[file_index]
+
+ica_paths = files.get_files(sub_path, subject_id, "-ica.fif")[2]
+ica_paths.sort()
+ica_path = ica_paths[file_index]
+
+ica_json_file = op.join(
+    sub_path,
+    "{}-ICA_to_reject.json".format(subject_id)
+)
+
+
+print("SUBJ: {}".format(subject_id), index, file_index)
+print("INPUT RAW FILE:", raw_path.split(os.sep)[-1])
+print("INPUT ICA FILE:", ica_path.split(os.sep)[-1])
+print("INPUT JSON FILE", ica_json_file.split(os.sep)[-1])
+
+raw = mne.io.read_raw_fif(
+    raw_path, preload=True, verbose=False
+)
+ica = mne.preprocessing.read_ica(
+    ica_path, verbose=False
+)
+
+raw.filter(1,20, verbose=False)
+raw.close()
+
+title_ = "sub:{}, file: {}".format(subject_id, ica_path.split(os.sep)[-1])
+
+ica.plot_components(inst=raw, show=False, title=title_)
+plt.show(block=False)
+
+sp.Popen(
+    ["gedit", str(ica_json_file)], 
+    stdout=sp.DEVNULL, 
+    stderr=sp.DEVNULL
+)

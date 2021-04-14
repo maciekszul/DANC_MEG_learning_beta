@@ -38,6 +38,7 @@ proc_path = op.join(der_path, "processed")
 files.make_folder(proc_path)
 
 subjects = files.get_folders_files(sub_path)[0]
+subjects.sort()
 subject = subjects[index]
 subject_id = subject.split("/")[-1]
 
@@ -86,7 +87,7 @@ for raw_path, eve_path in raw_eve_list:
 
     ica_file = op.join(
         sub_path,
-        ica_file
+        ica_name
     )
 
     ica.save(ica_file)
