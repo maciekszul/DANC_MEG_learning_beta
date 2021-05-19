@@ -37,7 +37,7 @@ files.make_folder(der_path)
 proc_path = op.join(der_path, "processed")
 files.make_folder(proc_path)
 
-subjects = files.get_folders_files(sub_path)[0]
+subjects = files.get_folders_files(proc_path)[0]
 subjects.sort()
 subject = subjects[index]
 subject_id = subject.split("/")[-1]
@@ -60,46 +60,46 @@ raw_eve_list = list(zip(raw_paths, event_paths))
 ica_json = dict()
 
 
-# for raw_path, eve_path in [raw_eve_list[0]]:
-for raw_path, eve_path in raw_eve_list:
-    print("INPUT RAW FILE:", raw_path)
-    print("EVE_RAW MATCH:", raw_path.split("-")[-2] == eve_path.split("-")[-2])
-    numero = str(raw_path.split("-")[-2]).zfill(3)
+# # for raw_path, eve_path in [raw_eve_list[0]]:
+# for raw_path, eve_path in raw_eve_list:
+#     print("INPUT RAW FILE:", raw_path)
+#     print("EVE_RAW MATCH:", raw_path.split("-")[-2] == eve_path.split("-")[-2])
+#     numero = str(raw_path.split("-")[-2]).zfill(3)
     
-    raw = mne.io.read_raw_fif(raw_path, verbose=False, preload=False)
+#     raw = mne.io.read_raw_fif(raw_path, verbose=False, preload=False)
 
-    raw_filtered = raw.copy()
-    raw_filtered.load_data().filter(
-        l_freq=1.,
-        h_freq=60, 
-        n_jobs=-1
-    )
+#     raw_filtered = raw.copy()
+#     raw_filtered.load_data().filter(
+#         l_freq=1.,
+#         h_freq=60, 
+#         n_jobs=-1
+#     )
     
-    ica = mne.preprocessing.ICA(
-        method="infomax",
-        fit_params=dict(extended=True),
-        n_components=25,
-        max_iter=5000
-    )
-    ica.fit(raw_filtered)
+#     ica = mne.preprocessing.ICA(
+#         method="infomax",
+#         fit_params=dict(extended=True),
+#         n_components=25,
+#         max_iter=5000
+#     )
+#     ica.fit(raw_filtered)
 
-    ica_name = "{}-{}-ica.fif".format(subject_id, numero)
+#     ica_name = "{}-{}-ica.fif".format(subject_id, numero)
 
-    ica_file = op.join(
-        sub_path,
-        ica_name
-    )
+#     ica_file = op.join(
+#         sub_path,
+#         ica_name
+#     )
 
-    ica.save(ica_file)
+#     ica.save(ica_file)
 
-    ica_json[ica_name] = []
+#     ica_json[ica_name] = []
 
-ica_json_path = op.join(
-    sub_path, 
-    "{}-ICA_to_reject.json".format(subject_id)
-)
-if not op.exists(ica_json_path):
-    dump_the_dict(
-        ica_json_path,
-        ica_json
-    )
+# ica_json_path = op.join(
+#     sub_path, 
+#     "{}-ICA_to_reject.json".format(subject_id)
+# )
+# if not op.exists(ica_json_path):
+#     dump_the_dict(
+#         ica_json_path,
+#         ica_json
+#     )

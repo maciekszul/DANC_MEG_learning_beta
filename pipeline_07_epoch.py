@@ -2,6 +2,7 @@ import sys
 import json
 import mne
 import os.path as op
+from mne.filter import detrend
 from utilities import files
 import matplotlib.pylab as plt
 
@@ -33,7 +34,7 @@ files.make_folder(der_path)
 proc_path = op.join(der_path, "processed")
 files.make_folder(proc_path)
 
-subjects = files.get_folders_files(sub_path)[0]
+subjects = files.get_folders_files(proc_path)[0]
 subjects.sort()
 subject = subjects[index]
 subject_id = subject.split("/")[-1]
@@ -120,7 +121,8 @@ for (raw_path, ica_key, eve_path) in raw_ica_eve:
             tmin=tmin,
             tmax=tmax,
             baseline=None,
-            verbose=False
+            verbose=False,
+            detrend=1
         )
         # # plotting the psd of the epochs
         # picks = [i for i in raw.ch_names if "O" in i] + [i for i in raw.ch_names if "T" in i]

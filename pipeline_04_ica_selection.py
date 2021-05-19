@@ -35,21 +35,18 @@ with open(json_file) as pipeline_file:
 
 path = parameters["dataset_path"]
 sfreq = parameters["downsample_dataset"]
-sub_path = op.join(path, "data")
 
 der_path = op.join(path, "derivatives")
 files.make_folder(der_path)
 proc_path = op.join(der_path, "processed")
 files.make_folder(proc_path)
 
-subjects = files.get_folders_files(sub_path)[0]
+subjects = files.get_folders_files(proc_path)[0]
 subjects.sort()
 subject = subjects[index]
 subject_id = subject.split("/")[-1]
 
-meg_path = op.join(subject, "ses-01", "meg")
-
-beh_path = op.join(subject, "ses-01", "behaviour")
+beh_path = op.join(path, "data", subject_id, "ses-01", "behaviour")
 
 edf_paths = files.get_files(beh_path, "", ".edf")[2]
 edf_paths.sort()
@@ -91,7 +88,8 @@ ecg_file_path = op.join(
 
 ds = Detectors(sfreq)
 
-# for (raw_path, ica_key, edf_path) in [raw_ica_edf[2]]:
+
+# # for (raw_path, ica_key, edf_path) in [raw_ica_edf[2]]:
 for (raw_path, ica_key, edf_path) in raw_ica_edf:
     ica_path = op.join(
         sub_path,
@@ -220,6 +218,5 @@ for i in (ecg_file_path, eog_file_path):
     if not op.exists(i):
         subprocess.run(["touch", i])
 
-dump_the_dict(ecg_file_path, ecg_out)    
+dump_the_dict(ecg_file_path, ecg_out)
 dump_the_dict(eog_file_path, eog_out)
-
