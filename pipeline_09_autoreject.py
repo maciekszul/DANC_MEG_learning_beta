@@ -55,8 +55,8 @@ beh_paths = files.get_files(sub_path, "sub", "-beh.csv")[2]
 eve_paths = files.get_files(sub_path, "sub", "-eve.fif")[2]
 
 
-# for epo in epo_paths:
-for epo in [epo_paths[0]]:
+for epo in epo_paths:
+# for epo in [epo_paths[0]]:
     numero = epo.split(sep)[-1].split("-")[2]
     beh_path = [i for i in beh_paths if numero in i][0]
     eve_path = [i for i in eve_paths if numero in i][0]
