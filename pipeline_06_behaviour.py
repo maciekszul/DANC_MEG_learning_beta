@@ -37,10 +37,12 @@ files.make_folder(der_path)
 proc_path = op.join(der_path, "processed")
 files.make_folder(proc_path)
 
-subjects = files.get_folders_files(proc_path)[0]
+subjects = files.get_folders_files(sub_path)[0]
 subjects.sort()
 subject = subjects[index]
 subject_id = subject.split("/")[-1]
+
+print("ID:", subject_id)
 
 beh_path = op.join(subject, "ses-01", "behaviour")
 
@@ -91,6 +93,9 @@ for beh_file in beh_files:
     reach_angle = []
     auc_from_target = []
     auc_from_min = []
+    aim_pos = []
+    reach_pos = []
+    target_angle = []
     traj_xyt_tr = dict()
 
     for tr_ix in range(trial_n):
@@ -108,15 +113,22 @@ for beh_file in beh_files:
 
         rea_ang = np.nan
         aim_ang = np.nan
+
         try:
             reach_ix = np.max(np.where(radius <= target_radius)[0])
             aim_ix = np.min(np.where(radius >= 50)[0])
             rea_ang = angle[reach_ix] - targets[tr_targ,0]
             aim_ang = angle[aim_ix] - targets[tr_targ,0]
+
         except:
             rea_ang = np.nan
             aim_ang = np.nan
-
+        if angle.shape[0] == 0:
+            aim_pos.append(np.nan)
+            reach_pos.append(np.nan)
+        elif angle.shape[0] > 0:
+            aim_pos.append(angle[aim_ix])
+            reach_pos.append(angle[reach_ix])
         traj_xyt_tr[tr_ix] = {
             "x":list(x), 
             "y":list(y), 
@@ -126,21 +138,25 @@ for beh_file in beh_files:
         }
         aim_angle.append(aim_ang)
         reach_angle.append(rea_ang)
+        target_angle.append(targets[tr_targ,0])
 
     data = {
-    "subject_id": np.full(trial_n, id),
-    "group": np.full(trial_n, np.array(raw["run_params"]["group"]).flatten()[0], dtype=int),
-    "block": np.full(trial_n, np.array(raw["run_params"]["block"]).flatten()[0], dtype=int),
-    "trial_in_block": np.arange(trial_n),
-    "trial_coherence": np.array(raw["run_data"]["trial_coherence"]).flatten(),
-    "trial_perturb": np.array(raw["run_data"]["trial_perturb"]).flatten(),
-    "trial_type": np.full(trial_n, np.array(raw["run_params"]["trial_type"]).flatten()[0], dtype=int),
-    "reach_dur": np.array(raw["run_data"]["reach_dur"]).flatten(),
-    "reach_rt": np.array(raw["run_data"]["reach_rt"]).flatten(),
-    "trial_directions": np.array(raw["run_data"]["trial_directions"]).flatten().astype(int),
-    "trial_target": trial_target,
-    "aim_target": np.array(aim_angle),
-    "reach_target": np.array(reach_angle),
+        "subject_id": np.full(trial_n, id),
+        "group": np.full(trial_n, np.array(raw["run_params"]["group"]).flatten()[0], dtype=int),
+        "block": np.full(trial_n, np.array(raw["run_params"]["block"]).flatten()[0], dtype=int),
+        "trial_in_block": np.arange(trial_n),
+        "trial_coherence": np.array(raw["run_data"]["trial_coherence"]).flatten(),
+        "trial_perturb": np.array(raw["run_data"]["trial_perturb"]).flatten(),
+        "trial_type": np.full(trial_n, np.array(raw["run_params"]["trial_type"]).flatten()[0], dtype=int),
+        "reach_dur": np.array(raw["run_data"]["reach_dur"]).flatten(),
+        "reach_rt": np.array(raw["run_data"]["reach_rt"]).flatten(),
+        "trial_directions": np.array(raw["run_data"]["trial_directions"]).flatten().astype(int),
+        "trial_target": trial_target,
+        "aim_target": np.array(aim_angle),
+        "reach_target": np.array(reach_angle),
+        "aim_real_angle": np.array(aim_pos),
+        "reach_real_angle": np.array(reach_pos),
+        "true_target_angle": np.array(target_angle)
     }
 
     data = pd.DataFrame.from_dict(data)
