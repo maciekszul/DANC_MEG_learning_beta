@@ -86,6 +86,9 @@ raw.close()
 title_ = "sub:{}, file: {}".format(subject_id, ica_path.split(os.sep)[-1])
 
 ica.plot_components(inst=raw, show=False, title=title_)
+
+ica.plot_sources(inst=raw, show=False, title=title_)
+
 plt.show(block=False)
 
 sp.Popen(

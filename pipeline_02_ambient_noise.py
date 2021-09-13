@@ -8,6 +8,8 @@ from utilities import files
 import matplotlib.pylab as plt
 from matplotlib import gridspec
 import meegkit as mk
+from zapline_iterator.zapline_iter import zapline_until_gone
+
 
 try:
     index = int(sys.argv[1])
@@ -75,35 +77,34 @@ for raw_path, eve_path in raw_eve_list:
     plt.close("all")
     
     info = raw.info
-    raw = raw.get_data().transpose()
+    raw = raw.get_data()
        
     nsplit = 20
     if numero == "001":
         nsplit = 5
 
-    raw = np.array_split(raw, nsplit)
+    raw = np.array_split(raw, nsplit, axis=1)
     # ZAPLINE
     output = []
     for chunk in raw:
-        zapped, artifact = mk.dss.dss_line(
+
+        zapped, iterations = zapline_until_gone(
             chunk,
             50.0,
             600.0,
-            nremove=10
+            win_sz=7.5
         )
-        del artifact
-        
-        zapped, artifact = mk.dss.dss_line(
+
+        zapped, iterations = zapline_until_gone(
             zapped,
             60.0,
             600.0,
-            nremove=10
+            win_sz=7.5
         )
 
-        del artifact
         output.append(zapped)
     # recreating the data structure
-
+    output = [i.transpose() for i in output]
     raw = np.concatenate(output)
     del output
     raw = mne.io.RawArray(

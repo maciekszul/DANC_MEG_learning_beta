@@ -33,6 +33,10 @@ except:
 with open(json_file) as pipeline_file:
     parameters = json.load(pipeline_file)
 
+
+mne.set_log_level(verbose=None)
+
+
 path = parameters["dataset_path"]
 sfreq = parameters["downsample_dataset"]
 
