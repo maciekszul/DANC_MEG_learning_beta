@@ -95,18 +95,23 @@ for raw_path, eve_path in raw_eve_list:
             win_sz=7.5
         )
 
+        output.append(zapped)
+    
+    output_z = []
+    for chunk in output:
         zapped, iterations = zapline_until_gone(
             zapped,
             60.0,
             600.0,
             win_sz=7.5
         )
-
-        output.append(zapped)
-    # recreating the data structure
-    output = [i.transpose() for i in output]
-    raw = np.concatenate(output)
+        output_z.append(zapped)
     del output
+
+    # recreating the data structure
+    output_z = [i.transpose() for i in output_z]
+    raw = np.concatenate(output_z)
+    del output_z
     raw = mne.io.RawArray(
         raw.transpose(),
         info
