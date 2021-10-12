@@ -61,7 +61,7 @@ files.make_folder(src_folder)
 
 
 #### MODIFY THE FIF SEARCH PATHS ####
-fif_paths = files.get_files(subject, "zapline", "-raw.fif")[2]
+fif_paths = files.get_files(subject, "sub", "-epo.fif")[2]
 fif_paths.sort()
 
 subject_data = files.get_files(raw_meg_dir,"", ".tsv")[2][0]
@@ -93,7 +93,7 @@ for spm_path in spm_converted_paths:
     print(spm_path)
     parasite.src_forward_model(
         spm_path, src_folder, surface_file, mri_file,
-        matlab.double(row.lpa), matlab.double(row.rpa), matlab.double(row.nas),
+        matlab.int8(row.lpa), matlab.int8(row.rpa), matlab.int8(row.nas),
         nargout=0
     )
 
