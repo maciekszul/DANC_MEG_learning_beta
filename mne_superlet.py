@@ -5,7 +5,7 @@ from joblib import Parallel, delayed
 import numpy as np
 
 
-def superlets_mne_epochs(epochs, max_freq=120, num=400, n_jobs=1):
+def superlets_mne_epochs(epochs, max_freq=120, num=400, n_jobs=1, save_obj=True):
         
     def do_superlet(epoch, ix, key, scales, sfreq):
         signal = epoch[ix, :]
@@ -30,12 +30,15 @@ def superlets_mne_epochs(epochs, max_freq=120, num=400, n_jobs=1):
         Parallel(n_jobs=n_jobs, require="sharedmem")(delayed(do_superlet)(epoch, ix, key, scales, epoch_info["sfreq"]) for ix, key in enumerate(epoch_info.ch_names))
         epochs_list.append(np.array([epoch_dict[ch] for ch in epochs.ch_names]))
     
-    epochs = time_frequency.EpochsTFR(
-        epoch_info,
-        np.array(epochs_list), 
-        epochs.times, 
-        foi,
-        events=epochs.events,
-        comment="Superlet TF"
-    )
+    if save_obj:
+        epochs = time_frequency.EpochsTFR(
+            epoch_info,
+            np.array(epochs_list), 
+            epochs.times, 
+            foi,
+            events=epochs.events,
+            comment="Superlet TF"
+        )
+    else:
+        epochs = epochs_list
     return epochs
