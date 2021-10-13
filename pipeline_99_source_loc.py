@@ -61,7 +61,7 @@ files.make_folder(src_folder)
 
 
 #### MODIFY THE FIF SEARCH PATHS ####
-fif_paths = files.get_files(subject, "sub", "-epo.fif")[2]
+fif_paths = files.get_files(subject, "sub", "motor-epo.fif")[2]
 fif_paths.sort()
 
 subject_data = files.get_files(raw_meg_dir,"", ".tsv")[2][0]
@@ -81,7 +81,7 @@ parasite = matlab.engine.connect_matlab()
 fif_res4_paths = list(zip(fif_paths, res4_paths))
 for fif, res4 in [fif_res4_paths[0]]:
     print(fif, res4)
-    parasite.src_convert_mne_to_spm(res4, fif, 0, nargout=0)
+    parasite.src_convert_mne_to_spm(res4, fif, 1, nargout=0)
 
 print(surface_file, op.exists(surface_file))
 print(mri_file, op.exists(mri_file))
@@ -93,7 +93,7 @@ for spm_path in spm_converted_paths:
     print(spm_path)
     parasite.src_forward_model(
         spm_path, src_folder, surface_file, mri_file,
-        matlab.int8(row.lpa), matlab.int8(row.rpa), matlab.int8(row.nas),
+        matlab.double(row.nas), matlab.double(row.lpa), matlab.double(row.rpa),
         nargout=0
     )
 
@@ -101,6 +101,8 @@ spm_converted_paths = files.get_files(subject, "coreg_spm_converted", ".mat")[2]
 spm_converted_paths.sort()
 for spm_path in spm_converted_paths:
     print(spm_path)
+    filename = spm_path.split("_")[-1].split(".")[0]
     parasite.src_source_reconstruction(
-        spm_path, src_folder, 0, nargout=0
+        spm_path, src_folder, filename, nargout=0
     )
+
