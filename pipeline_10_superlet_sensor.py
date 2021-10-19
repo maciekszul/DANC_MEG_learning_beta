@@ -4,9 +4,10 @@ from mne import read_epochs, set_log_level, pick_types
 import os.path as op
 from os import sep
 from utilities import files
-import matplotlib.pylab as plt
 import numpy as np
 from mne_superlet import superlets_mne_epochs
+from time import gmtime, strftime
+
 
 set_log_level(verbose=False)
 
@@ -50,12 +51,18 @@ qc_folder = op.join(sub_path, "QC")
 files.make_folder(qc_folder)
 
 epo_paths = files.get_files(sub_path, "sub", "-epo.fif")[2]
+epo_paths.sort()
 
 for epo_path in epo_paths:
-    print(epo_paths)
     filename = epo_path.split(sep)[-1].split(".")[0]
-    epochs = read_epochs(epo_path)
-    epochs = epochs.pick_types(meg=True, ref_meg=False)
-    epochs = superlets_mne_epochs(epochs, max_freq=120, num=400, n_jobs=-1, save_obj=False)
-
-    np.savez(op.join(subject, "{}.npz".format(filename)), *epochs)
+    npz_path = op.join(subject, "{}.npz".format(filename))
+    if not op.exists(npz_path):
+        print(strftime("%a, %d %b %Y %H:%M:%S", gmtime()), "STARTED", npz_path)
+        epochs = read_epochs(epo_path)
+        epochs = epochs.pick_types(meg=True, ref_meg=False)
+        epochs = superlets_mne_epochs(epochs, max_freq=120, num=400, n_jobs=-1, save_obj=False)
+        np.savez(npz_path, *epochs)
+        print(strftime("%a, %d %b %Y %H:%M:%S", gmtime()), "SAVED:", npz_path)
+    if op.exists(npz_path):
+        print(strftime("%a, %d %b %Y %H:%M:%S", gmtime()), "EXISTS", npz_path)
+    
