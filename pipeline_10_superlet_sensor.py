@@ -5,7 +5,7 @@ import os.path as op
 from os import sep
 from utilities import files
 import numpy as np
-from mne_superlet import superlets_mne_epochs
+from mne_superlet import superlets_do_single_epoch
 from time import gmtime, strftime
 
 
@@ -56,13 +56,19 @@ epo_paths.sort()
 for epo_path in epo_paths:
     filename = epo_path.split(sep)[-1].split(".")[0]
     npz_path = op.join(subject, "{}.npz".format(filename))
+    output_folder = op.join(subject, filename)
+    files.make_folder(output_folder)
     if not op.exists(npz_path):
-        print(strftime("%a, %d %b %Y %H:%M:%S", gmtime()), "STARTED", npz_path)
+        print(strftime("%a, %d %b %Y %H:%M:%S", gmtime()), "STARTED", output_folder)
         epochs = read_epochs(epo_path)
         epochs = epochs.pick_types(meg=True, ref_meg=False)
-        epochs = superlets_mne_epochs(epochs, max_freq=120, num=400, n_jobs=-1, save_obj=False)
-        np.savez(npz_path, *epochs)
-        print(strftime("%a, %d %b %Y %H:%M:%S", gmtime()), "SAVED:", npz_path)
+        for ix, epoch in enumerate(epochs.__iter__()):
+            fname = "{}-{}.npy".format(str(ix).zfill(3), filename)
+            output_array = superlets_do_single_epoch(epoch, epochs.info, max_freq=100, num=20, n_jobs=-1)
+            output_path = op.join(output_folder,fname)
+            np.save(output_path, output_array)
+            del output_array
+        print(strftime("%a, %d %b %Y %H:%M:%S", gmtime()), "FINISHED:", output_folder)
     if op.exists(npz_path):
-        print(strftime("%a, %d %b %Y %H:%M:%S", gmtime()), "EXISTS", npz_path)
+        print(strftime("%a, %d %b %Y %H:%M:%S", gmtime()), "EXISTS", output_folder)
     
