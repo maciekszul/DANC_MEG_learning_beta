@@ -1,5 +1,5 @@
 {
-    "dataset_path": "/media/mszul/disk/explicit_implicit_beta",
+    "dataset_path": "/media/mszul/DANC_disk/explicit_implicit_beta",
     "downsample_head": 125,
     "downsample_dataset": 600,
     "hi_pass_filter": 120
