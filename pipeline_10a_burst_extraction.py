@@ -70,7 +70,7 @@ mot_time = np.linspace(-1, 1.5, num=1501)[75:-75]
 bursts_vis = {i: [] for i in info.ch_names}
 bursts_mot = {i: [] for i in info.ch_names}
 
-for block, (vis_folder, mot_folder) in enumerate((visual_motor_folders[0])):
+for block, (vis_folder, mot_folder) in enumerate(visual_motor_folders):
     vis_name = vis_folder.split(sep)[-1]
     mot_name = mot_folder.split(sep)[-1]
     print(vis_name, mot_name)
