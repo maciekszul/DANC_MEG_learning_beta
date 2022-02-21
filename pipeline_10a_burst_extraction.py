@@ -95,7 +95,8 @@ for block, (vis_folder, mot_folder) in enumerate(visual_motor_folders):
             psd_vis[ch_name].append([block, trial, psd])
     
     for ch_name in info.ch_names:
-        psd_mean_vis = np.mean(psd_vis[ch_name][:,2], axis=0)
+        psd_mean_vis = np.vstack(psd_vis[ch_name])
+        psd_mean_vis = np.mean(psd_mean_vis[:,2], axis=0)
         ff = FOOOF()
         ff.fit(freqs, psd_mean_vis, [1, 120])
         threshold[ch_name] = 10**ff._ap_fit[beta_range]
