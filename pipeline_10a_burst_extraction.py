@@ -52,9 +52,9 @@ files.make_folder(sub_path)
 #setting the paths and extracting files
 slt_mot_paths  = [i for i in files.get_folders_files(sub_path)[0] if "motor" in i]
 slt_vis_paths = [i for i in files.get_folders_files(sub_path)[0] if "visual" in i]
-epo_mot_paths  = files.get_files(path, "sub", "motor-epo.fif")[2]
-epo_vis_paths = files.get_files(path, "sub", "visual-epo.fif")[2]
-beh_match_path = files.get_files(path, "sub", "beh-match.json")[2][0]
+epo_mot_paths  = files.get_files(sub_path, "sub", "motor-epo.fif")[2]
+epo_vis_paths = files.get_files(sub_path, "sub", "visual-epo.fif")[2]
+beh_match_path = files.get_files(sub_path, "sub", "beh-match.json")[2][0]
 with open(beh_match_path) as f:
     beh_match = json.load(f)
 slt_mot_paths.sort()
