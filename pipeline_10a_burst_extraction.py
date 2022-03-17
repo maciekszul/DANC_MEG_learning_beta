@@ -1,16 +1,18 @@
-import sys
 import json
-import os.path as op
+import math
+import copy
+import sys
+import warnings
 from os import sep
-from mne import read_epochs
-from sklearn.preprocessing import minmax_scale
-from scipy.ndimage import maximum_filter
-from utilities import files
-from extra.tools import fwhm_burst_norm
-from fooof import FOOOF
-import pandas as pd
+import os.path as op
 import numpy as np
+from fooof import FOOOF
+from extra.tools import extract_bursts
+from mne import read_epochs
+from utilities import files
 
+
+warnings.filterwarnings("ignore")
 # parsing command line arguments
 try:
     index = int(sys.argv[1])
@@ -47,123 +49,137 @@ subject_id = subject.split("/")[-1]
 sub_path = op.join(proc_path, subject_id)
 files.make_folder(sub_path)
 
-all_folders = files.get_folders_files(sub_path)[0]
-all_folders = [i for i in all_folders if "-epo" in i]
-all_folders.sort()
+#setting the paths and extracting files
+slt_mot_paths  = [i for i in files.get_folders_files(sub_path)[0] if "motor" in i]
+slt_vis_paths = [i for i in files.get_folders_files(sub_path)[0] if "visual" in i]
+epo_mot_paths  = files.get_files(path, "sub", "motor-epo.fif")[2]
+epo_vis_paths = files.get_files(path, "sub", "visual-epo.fif")[2]
+beh_match_path = files.get_files(path, "sub", "beh-match.json")[2][0]
+with open(beh_match_path) as f:
+    beh_match = json.load(f)
+slt_mot_paths.sort()
+slt_vis_paths.sort()
+epo_mot_paths.sort()
+epo_vis_paths.sort()
+epo_slt_mot_vis = list(zip(epo_mot_paths, epo_vis_paths, slt_mot_paths, slt_vis_paths))
 
-all_visual = [i for i in all_folders if "visual" in i]
-all_motor = [i for i in all_folders if "motor" in i]
-visual_motor_folders = list(zip(all_visual, all_motor))
-
-# getting channel info from epoch file
-epo_path = files.get_files(sub_path, "sub-", "-epo.fif")[2][0]
-info = read_epochs(epo_path, verbose=False)
+info = read_epochs(epo_mot_paths[0], verbose=False)
 info.pick_types(meg=True, ref_meg=False, misc=False)
 info = info.info
-
-# info
 freqs = np.linspace(1,120, num=400)
-beta_range = np.where((freqs >= 13) & (freqs <= 30))[0]
-vis_time = np.linspace(-1, 2, num=1801)[75:-75]
-mot_time = np.linspace(-1, 1.5, num=1501)[75:-75]
+search_range = np.where((freqs >= 10) & (freqs <= 33))[0]
+beta_lims = [13, 30]
 
-bursts_vis = {i: [] for i in info.ch_names}
-bursts_mot = {i: [] for i in info.ch_names}
+vis_output = {}
+mot_output = {}
 
-for block, (vis_folder, mot_folder) in enumerate(visual_motor_folders):
-    vis_name = vis_folder.split(sep)[-1]
-    mot_name = mot_folder.split(sep)[-1]
-    print(vis_name, mot_name)
-    vis_files = files.get_files(vis_folder, "", ".npy")[2]
-    vis_files.sort()
-    mot_files = files.get_files(mot_folder, "", ".npy")[2]
-    mot_files.sort()
+# for ch_ix, channel in enumerate ([info.ch_names[10]]):
+for ch_ix, channel in enumerate(info.ch_names):
+    vis_blocks = {}
+    mot_blocks = {}
+    # for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot_vis[:2]):
+    for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot_vis):
+        beh_match_vis = beh_match[epo_vis_p.split(sep)[-1]]
+        beh_match_mot = beh_match[epo_mot_p.split(sep)[-1]]
+        print(block, channel)
+        slt_vis_nps = files.get_files(slt_vis_p, "", ".npy")[2]
+        slt_vis_nps.sort()
+        slt_mot_nps = files.get_files(slt_mot_p, "", ".npy")[2]
+        slt_mot_nps.sort()
+        epo_vis = read_epochs(epo_vis_p, verbose=False)
+        epo_vis = epo_vis.pick_types(meg=True, ref_meg=False, misc=False)
+        epo_mot = read_epochs(epo_mot_p, verbose=False)
+        epo_mot = epo_mot.pick_types(meg=True, ref_meg=False, misc=False)
+        print("vis, beh_match {}, nps {}, epo {}".format(len(beh_match_vis), len(slt_vis_nps), len(epo_vis)))
+        print("mot, beh_match {}, nps {}, epo {}".format(len(beh_match_mot), len(slt_mot_nps), len(epo_mot)))
+        vis_TF = []
+        vis_psd = []
+        for vis_p in slt_vis_nps:
+            data = np.load(vis_p)
+            TF = data[ch_ix, search_range, :]
+            vis_TF.append(TF)
+            psd = np.mean(data[ch_ix, :, :], axis=1)
+            vis_psd.append(psd)
+            del(data)
 
-    TF_vis = {i: [] for i in info.ch_names}
-    psd_vis = {i: [] for i in info.ch_names}
-    TF_mot = {i: [] for i in info.ch_names}
-    threshold = {}
+        mot_TF = []
+        mot_psd = []
+        for mot_p in slt_mot_nps:
+            data = np.load(mot_p)
+            TF = data[ch_ix, search_range, :]
+            mot_TF.append(TF)
+            psd = np.mean(data[ch_ix, :, :], axis=1)
+            mot_psd.append(psd)
+            del(data)
+
+        vis_psd_avg = np.mean(np.vstack(vis_psd), axis=0)
+        mot_psd_avg = np.mean(np.vstack(mot_psd), axis=0)
+
+        ff_vis = FOOOF()
+        ff_vis.fit(freqs, vis_psd_avg, [1, 120])
+        ap_fit_v = 10 ** ff_vis._ap_fit
+
+        vis_raw = epo_vis.get_data()[:,ch_ix,:]
+        mot_raw = epo_mot.get_data()[:,ch_ix,:]
+        fooof_thresh = ap_fit_v[search_range].reshape(-1, 1)
+        sfreq = epo_vis.info['sfreq']
+        block_vis_burst = extract_bursts(
+            vis_raw, 
+            vis_TF, 
+            epo_vis.times, 
+            freqs[search_range], 
+            beta_lims, 
+            fooof_thresh, 
+            sfreq,
+            beh_ix=beh_match_vis
+        )
+        vis_blocks[block] = block_vis_burst
+        
+        block_mot_burst = extract_bursts(
+            mot_raw, 
+            mot_TF, 
+            epo_mot.times, 
+            freqs[search_range], 
+            beta_lims, 
+            fooof_thresh, 
+            sfreq,
+            beh_ix=beh_match_mot
+        )
+        mot_blocks[block] = block_mot_burst
     
-
-    for trial, vis_file in enumerate(vis_files):
-        print(vis_file.split(sep)[-1], block, trial, block*56+trial)
-        data = np.load(vis_file)
-        for ch_ix, ch_name in enumerate(info.ch_names):
-            TF = data[ch_ix, beta_range, 75:-75]
-            TF_vis[ch_name].append([block, trial, TF])
-            psd = np.mean(data[ch_ix, :, 75:-75], axis=1)
-            psd_vis[ch_name].append([block, trial, psd])
+    # most of the nonsense here is to clean up the data type for savin in JSON
+    # appending all blocks together to avoid too nested JSON file
+    vis_results = {i:[] for i in vis_blocks[0].keys()}
+    vis_results["block"] = []
+    vis_results["pp_ix"] = []
+    for bl in vis_blocks.keys():
+        for key in vis_blocks[bl]:
+            if key == "waveform":
+                vis_results[key].extend(vis_blocks[bl][key].astype(float).tolist())
+            elif key == "trial":
+                vis_results[key].extend(vis_blocks[bl][key].astype(int).tolist())
+            else:
+                vis_results[key].extend(np.array(vis_blocks[bl][key]).astype(float).tolist())
+        vis_results["block"].extend(np.tile(bl, len(vis_blocks[bl]["trial"])).astype(int).tolist())
+        vis_results["pp_ix"].extend((bl*56 + np.array(vis_blocks[bl]["trial"])).astype(int).tolist())
+    vis_output[channel] = vis_results
     
-    for ch_name in info.ch_names:
-        psd_mean_vis = [k for i,j,k in psd_vis[ch_name]]
-        psd_mean_vis = np.vstack(psd_mean_vis)
-        psd_mean_vis = np.mean(psd_mean_vis, axis=0)
-        ff = FOOOF()
-        ff.fit(freqs, psd_mean_vis, [1, 120])
-        threshold[ch_name] = 10**ff._ap_fit[beta_range]
+    mot_results = {i:[] for i in mot_blocks[0].keys()}
+    mot_results["block"] = []
+    mot_results["pp_ix"] = []
+    for bl in mot_blocks.keys():
+        for key in mot_blocks[bl]:
+            if key == "waveform":
+                mot_results[key].extend(mot_blocks[bl][key].astype(float).tolist())
+            elif key == "trial":
+                mot_results[key].extend(mot_blocks[bl][key].astype(int).tolist())
+            else:
+                mot_results[key].extend(mot_blocks[bl][key])
+        mot_results["block"].extend(np.tile(bl, len(mot_blocks[bl]["trial"])).astype(int).tolist())
+        mot_results["pp_ix"].extend((bl*56 + np.array(mot_blocks[bl]["trial"])).astype(int).tolist())
+    mot_output[channel] = mot_results
 
-    for trial, mot_file in enumerate(mot_files):
-        print(mot_file.split(sep)[-1], block, trial, block*56+trial)
-        data = np.load(mot_file)
-        for ch_ix, ch_name in enumerate(info.ch_names):
-            TF = data[ch_ix, beta_range, 75:-75]
-            TF_mot[ch_name].append([block, trial, TF])
-    
 
-    for ch_name in info.ch_names:
-        for block, trial, TF in TF_vis[ch_name]:
-            vis_TF = TF - threshold[ch_name].reshape(-1,1)
-            vis_TF[vis_TF<=0] = 0
-            mm_map_v = minmax_scale(vis_TF) - 0.5
-            mm_map_v[mm_map_v<=0] = 0
-            mm_map_v = minmax_scale(mm_map_v)
-            vis_max = maximum_filter(vis_TF, size=(25, 200), mode="nearest")
-            vis_max = vis_TF * mm_map_v == vis_max
-            x, y = np.where(vis_max == 1)
-            pks = list(zip(x, y))
-            for pk in pks:
-                right_loc, left_loc, up_loc, down_loc = fwhm_burst_norm(vis_TF * mm_map_v, pk)
-                if 0 not in (right_loc + left_loc, up_loc + down_loc):
-                    bursts_vis[ch_name].append([
-                        int(pk[0]), 
-                        int(pk[1]+75), 
-                        int(right_loc), 
-                        int(left_loc), 
-                        int(up_loc), 
-                        int(down_loc), 
-                        float(vis_TF[pk]), 
-                        int(trial),
-                        int(block),
-                        int(block*56+trial)
-                    ])
-
-    for ch_name in info.ch_names:
-        for block, trial, TF in TF_mot[ch_name]:
-            mot_TF = TF - threshold[ch_name].reshape(-1,1)
-            mot_TF[mot_TF<=0] = 0
-            mm_map_m = minmax_scale(mot_TF) - 0.5
-            mm_map_m[mm_map_m<=0] = 0
-            mm_map_m = minmax_scale(mm_map_m)
-            mot_max = maximum_filter(mot_TF, size=(25, 200), mode="nearest")
-            mot_max = mot_TF * mm_map_m == mot_max
-            x, y = np.where(mot_max == 1)
-            pks = list(zip(x, y))
-            for pk in pks:
-                right_loc, left_loc, up_loc, down_loc = fwhm_burst_norm(mot_TF * mm_map_m, pk)
-                if 0 not in (right_loc + left_loc, up_loc + down_loc):
-                    bursts_mot[ch_name].append([
-                        int(pk[0]), 
-                        int(pk[1]+75), 
-                        int(right_loc), 
-                        int(left_loc), 
-                        int(up_loc), 
-                        int(down_loc), 
-                        float(mot_TF[pk]), 
-                        int(trial),
-                        int(block),
-                        int(block*56+trial)
-                    ])
-    
 vis_json_name = "{}-visual-burst.json".format(subject_id)
 mot_json_name = "{}-motor-burst.json".format(subject_id)
 
@@ -171,9 +187,9 @@ vis_json_path = op.join(subject, vis_json_name)
 mot_json_path = op.join(subject, mot_json_name)
 
 with open(vis_json_path, "w") as fp:
-    json.dump(bursts_vis, fp, indent=4)
+    json.dump(vis_output, fp, indent=4)
 print("SAVED", vis_json_path)
 
 with open(mot_json_path, "w") as fp:
-    json.dump(bursts_mot, fp, indent=4)
+    json.dump(mot_output, fp, indent=4)
 print("SAVED", mot_json_path)
