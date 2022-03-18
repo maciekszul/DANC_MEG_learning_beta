@@ -81,10 +81,8 @@ for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot
     slt_vis_nps.sort()
     slt_mot_nps = files.get_files(slt_mot_p, "", ".npy")[2]
     slt_mot_nps.sort()
-    epo_vis = read_epochs(epo_vis_p, verbose=False)
-    epo_vis = epo_vis.pick_types(meg=True, ref_meg=False, misc=False)
-    epo_mot = read_epochs(epo_mot_p, verbose=False)
-    epo_mot = epo_mot.pick_types(meg=True, ref_meg=False, misc=False)
+    epo_vis = read_epochs(epo_vis_p, verbose=False, preload=False)
+    epo_mot = read_epochs(epo_mot_p, verbose=False, preload=False)
     print(subject_id, block)
     print("vis, beh_match {}, nps {}, epo {}".format(len(beh_match_vis), len(slt_vis_nps), len(epo_vis)))
     print("mot, beh_match {}, nps {}, epo {}".format(len(beh_match_mot), len(slt_mot_nps), len(epo_mot)))
