@@ -81,7 +81,6 @@ for ch_ix, channel in enumerate(info.ch_names):
     for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot_vis):
         beh_match_vis = beh_match[epo_vis_p.split(sep)[-1]]
         beh_match_mot = beh_match[epo_mot_p.split(sep)[-1]]
-        print(block, channel)
         slt_vis_nps = files.get_files(slt_vis_p, "", ".npy")[2]
         slt_vis_nps.sort()
         slt_mot_nps = files.get_files(slt_mot_p, "", ".npy")[2]
@@ -90,8 +89,8 @@ for ch_ix, channel in enumerate(info.ch_names):
         epo_vis = epo_vis.pick_types(meg=True, ref_meg=False, misc=False)
         epo_mot = read_epochs(epo_mot_p, verbose=False)
         epo_mot = epo_mot.pick_types(meg=True, ref_meg=False, misc=False)
-        print("vis, beh_match {}, nps {}, epo {}".format(len(beh_match_vis), len(slt_vis_nps), len(epo_vis)))
-        print("mot, beh_match {}, nps {}, epo {}".format(len(beh_match_mot), len(slt_mot_nps), len(epo_mot)))
+        print("start:", subject_id, block, "vis, beh_match {}, nps {}, epo {}".format(len(beh_match_vis), len(slt_vis_nps), len(epo_vis)))
+        print("start:", subject_id, block, "mot, beh_match {}, nps {}, epo {}".format(len(beh_match_mot), len(slt_mot_nps), len(epo_mot)))
         vis_TF = []
         vis_psd = []
         for vis_p in slt_vis_nps:
@@ -188,8 +187,8 @@ mot_json_path = op.join(subject, mot_json_name)
 
 with open(vis_json_path, "w") as fp:
     json.dump(vis_output, fp, indent=4)
-print("SAVED", vis_json_path)
+print("SAVED", subject_id, vis_json_path)
 
 with open(mot_json_path, "w") as fp:
     json.dump(mot_output, fp, indent=4)
-print("SAVED", mot_json_path)
+print("SAVED", subject_id, mot_json_path)
