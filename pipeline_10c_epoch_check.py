@@ -83,9 +83,8 @@ for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot
     slt_mot_nps.sort()
     epo_vis = read_epochs(epo_vis_p, verbose=False, preload=False)
     epo_mot = read_epochs(epo_mot_p, verbose=False, preload=False)
-    print(subject_id, block)
-    print("vis, beh_match {}, nps {}, epo {}".format(len(beh_match_vis), len(slt_vis_nps), len(epo_vis)))
-    print("mot, beh_match {}, nps {}, epo {}".format(len(beh_match_mot), len(slt_mot_nps), len(epo_mot)))
+    print("vis", subject_id, block, len(beh_match_vis)==len(slt_vis_nps), len(beh_match_vis)==len(epo_vis), len(slt_vis_nps)==len(epo_vis), len(beh_match_vis), len(slt_vis_nps), len(epo_vis))
+    print("mot", subject_id, block, len(beh_match_mot)==len(slt_mot_nps), len(beh_match_mot)==len(epo_mot), len(slt_mot_nps)==len(epo_mot), len(beh_match_mot), len(slt_mot_nps), len(epo_mot))
 print("\n")
 
 
