@@ -89,8 +89,8 @@ for ch_ix, channel in enumerate(info.ch_names):
         epo_vis = epo_vis.pick_types(meg=True, ref_meg=False, misc=False)
         epo_mot = read_epochs(epo_mot_p, verbose=False)
         epo_mot = epo_mot.pick_types(meg=True, ref_meg=False, misc=False)
-        print("start:", subject_id, block, "vis, beh_match {}, nps {}, epo {}".format(len(beh_match_vis), len(slt_vis_nps), len(epo_vis)))
-        print("start:", subject_id, block, "mot, beh_match {}, nps {}, epo {}".format(len(beh_match_mot), len(slt_mot_nps), len(epo_mot)))
+        print("start:", "{}/274".format(ch_ix+1), subject_id, block, "vis, beh_match {}, nps {}, epo {}".format(len(beh_match_vis), len(slt_vis_nps), len(epo_vis)))
+        print("start:", "{}/274".format(ch_ix+1), subject_id, block, "mot, beh_match {}, nps {}, epo {}".format(len(beh_match_mot), len(slt_mot_nps), len(epo_mot)))
         vis_TF = []
         vis_psd = []
         for vis_p in slt_vis_nps:
