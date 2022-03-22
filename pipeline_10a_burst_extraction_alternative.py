@@ -146,37 +146,37 @@ for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot
         )
         mot_blocks[block] = block_mot_burst
     
-    # most of the nonsense here is to clean up the data type for savin in JSON
-    # appending all blocks together to avoid too nested JSON file
-    vis_results = {i:[] for i in vis_blocks[0].keys()}
-    vis_results["block"] = []
-    vis_results["pp_ix"] = []
-    for bl in vis_blocks.keys():
-        for key in vis_blocks[bl]:
-            if key == "waveform":
-                vis_results[key].extend(vis_blocks[bl][key].astype(float).tolist())
-            elif key == "trial":
-                vis_results[key].extend(vis_blocks[bl][key].astype(int).tolist())
-            else:
-                vis_results[key].extend(np.array(vis_blocks[bl][key]).astype(float).tolist())
-        vis_results["block"].extend(np.tile(bl, len(vis_blocks[bl]["trial"])).astype(int).tolist())
-        vis_results["pp_ix"].extend((bl*56 + np.array(vis_blocks[bl]["trial"])).astype(int).tolist())
-    vis_output[channel] = vis_results
-    
-    mot_results = {i:[] for i in mot_blocks[0].keys()}
-    mot_results["block"] = []
-    mot_results["pp_ix"] = []
-    for bl in mot_blocks.keys():
-        for key in mot_blocks[bl]:
-            if key == "waveform":
-                mot_results[key].extend(mot_blocks[bl][key].astype(float).tolist())
-            elif key == "trial":
-                mot_results[key].extend(mot_blocks[bl][key].astype(int).tolist())
-            else:
-                mot_results[key].extend(mot_blocks[bl][key])
-        mot_results["block"].extend(np.tile(bl, len(mot_blocks[bl]["trial"])).astype(int).tolist())
-        mot_results["pp_ix"].extend((bl*56 + np.array(mot_blocks[bl]["trial"])).astype(int).tolist())
-    mot_output[channel] = mot_results
+        # most of the nonsense here is to clean up the data type for savin in JSON
+        # appending all blocks together to avoid too nested JSON file
+        vis_results = {i:[] for i in vis_blocks[0].keys()}
+        vis_results["block"] = []
+        vis_results["pp_ix"] = []
+        for bl in vis_blocks.keys():
+            for key in vis_blocks[bl]:
+                if key == "waveform":
+                    vis_results[key].extend(vis_blocks[bl][key].astype(float).tolist())
+                elif key == "trial":
+                    vis_results[key].extend(vis_blocks[bl][key].astype(int).tolist())
+                else:
+                    vis_results[key].extend(np.array(vis_blocks[bl][key]).astype(float).tolist())
+            vis_results["block"].extend(np.tile(bl, len(vis_blocks[bl]["trial"])).astype(int).tolist())
+            vis_results["pp_ix"].extend((bl*56 + np.array(vis_blocks[bl]["trial"])).astype(int).tolist())
+        vis_output[channel] = vis_results
+        
+        mot_results = {i:[] for i in mot_blocks[0].keys()}
+        mot_results["block"] = []
+        mot_results["pp_ix"] = []
+        for bl in mot_blocks.keys():
+            for key in mot_blocks[bl]:
+                if key == "waveform":
+                    mot_results[key].extend(mot_blocks[bl][key].astype(float).tolist())
+                elif key == "trial":
+                    mot_results[key].extend(mot_blocks[bl][key].astype(int).tolist())
+                else:
+                    mot_results[key].extend(mot_blocks[bl][key])
+            mot_results["block"].extend(np.tile(bl, len(mot_blocks[bl]["trial"])).astype(int).tolist())
+            mot_results["pp_ix"].extend((bl*56 + np.array(mot_blocks[bl]["trial"])).astype(int).tolist())
+        mot_output[channel] = mot_results
 
 
 vis_json_name = "{}-visual-burst-iter.json".format(subject_id)
