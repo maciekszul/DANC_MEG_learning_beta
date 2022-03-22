@@ -130,7 +130,6 @@ def extract_bursts(raw_trials, TF, times, search_freqs, band_lims, fooof_thresh,
 
         # TF for iterating
         trial_TF_iter = copy.copy(trial_TF)
-
         while True:
             try:
                 # Compute noise floor
@@ -232,6 +231,7 @@ def extract_bursts(raw_trials, TF, times, search_freqs, band_lims, fooof_thresh,
                                 bursts['peak_adjustment'].append(adjustment)
                                 bursts['fwhm_freq'].append(fwhm_f)
                                 bursts['fwhm_time'].append(fwhm_t)
+                                print("added burst")
             except:
                 print("error")
                 continue
