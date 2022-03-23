@@ -73,8 +73,6 @@ beta_lims = [13, 30]
 vis_output = {}
 mot_output = {}
 
-# for ch_ix, channel in enumerate ([info.ch_names[10]]):
-
 vis_blocks = {}
 mot_blocks = {}
 for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot_vis):
@@ -88,6 +86,8 @@ for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot
     epo_vis = epo_vis.pick_types(meg=True, ref_meg=False, misc=False)
     epo_mot = read_epochs(epo_mot_p, verbose=False)
     epo_mot = epo_mot.pick_types(meg=True, ref_meg=False, misc=False)
+    vis_raw = epo_vis.get_data()
+    mot_raw = epo_mot.get_data()
     for ch_ix, channel in enumerate(info.ch_names):
         print("start:", "{}/274".format(ch_ix+1), subject_id, block, "vis, beh_match {}, nps {}, epo {}".format(len(beh_match_vis), len(slt_vis_nps), len(epo_vis)))
         print("start:", "{}/274".format(ch_ix+1), subject_id, block, "mot, beh_match {}, nps {}, epo {}".format(len(beh_match_mot), len(slt_mot_nps), len(epo_mot)))
@@ -118,12 +118,10 @@ for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot
         ff_vis.fit(freqs, vis_psd_avg, [1, 120])
         ap_fit_v = 10 ** ff_vis._ap_fit
 
-        vis_raw = epo_vis.get_data()[:,ch_ix,:]
-        mot_raw = epo_mot.get_data()[:,ch_ix,:]
         fooof_thresh = ap_fit_v[search_range].reshape(-1, 1)
         sfreq = epo_vis.info['sfreq']
         block_vis_burst = extract_bursts(
-            vis_raw, 
+            vis_raw[:,ch_ix,:], 
             vis_TF, 
             epo_vis.times, 
             freqs[search_range], 
@@ -135,7 +133,7 @@ for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot
         vis_blocks[block] = block_vis_burst
         
         block_mot_burst = extract_bursts(
-            mot_raw, 
+            mot_raw[:,ch_ix,:], 
             mot_TF, 
             epo_mot.times, 
             freqs[search_range], 
