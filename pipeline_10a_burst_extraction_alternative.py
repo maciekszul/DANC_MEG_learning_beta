@@ -6,6 +6,7 @@ import warnings
 from os import sep
 import os.path as op
 import numpy as np
+import time
 from fooof import FOOOF
 from extra.tools import extract_bursts
 from mne import read_epochs
@@ -26,6 +27,8 @@ try:
 except:
     json_file = "settings.json"
     print("USING:", json_file)
+
+start_time = time.time()
 
 # opening a json file
 with open(json_file) as pipeline_file:
@@ -185,6 +188,8 @@ mot_json_name = "{}-motor-burst-iter.json".format(subject_id)
 
 vis_json_path = op.join(subject, vis_json_name)
 mot_json_path = op.join(subject, mot_json_name)
+
+print(subject_id, "analysis finished in {} minutes, saving results.".format((time.time() - start_time)/60))
 
 with open(vis_json_path, "w") as fp:
     json.dump(vis_results, fp, indent=4)
