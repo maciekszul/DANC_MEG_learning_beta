@@ -91,9 +91,12 @@ def fwhm_burst_norm(TF, peak):
         left_loc = right_loc
     if right_loc is None:
         right_loc = left_loc
-
-    horiz = np.min([left_loc, right_loc])
-    vert = np.min([up_loc, down_loc])
+    try:
+        horiz = np.min([left_loc, right_loc])
+        vert = np.min([up_loc, down_loc])
+    except:
+        horiz = 0
+        vert = 0
     right_loc = horiz
     left_loc = horiz
     up_loc = vert

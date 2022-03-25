@@ -145,7 +145,7 @@ for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot
             )
         
         mot_burst_block[block][channel] = block_mot_burst
-        print(ch_ix+1, "/274 mot")
+        print(subject_id, ch_ix+1, "/274")
 
 vis_results = {i: {j: [] for j in vis_burst_block[0][info.ch_names[0]].keys()} for i in info.ch_names}
 mot_results = {i: {j: [] for j in vis_burst_block[0][info.ch_names[0]].keys()} for i in info.ch_names}
