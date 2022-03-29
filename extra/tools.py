@@ -91,12 +91,8 @@ def fwhm_burst_norm(TF, peak):
         left_loc = right_loc
     if right_loc is None:
         right_loc = left_loc
-    try:
-        horiz = np.min([left_loc, right_loc])
-        vert = np.min([up_loc, down_loc])
-    except:
-        horiz = 0
-        vert = 0
+    horiz = np.min([left_loc, right_loc])
+    vert = np.min([up_loc, down_loc])
     right_loc = horiz
     left_loc = horiz
     up_loc = vert
@@ -147,7 +143,10 @@ def extract_bursts(raw_trials, TF, times, search_freqs, band_lims, fooof_thresh,
                 break
 
             # Fit 2D Gaussian and subtract from TF
-            right_loc, left_loc, up_loc, down_loc = fwhm_burst_norm(trial_TF_iter, (peak_freq_idx, peak_time_idx))
+            try:
+                right_loc, left_loc, up_loc, down_loc = fwhm_burst_norm(trial_TF_iter, (peak_freq_idx, peak_time_idx))
+            except:
+                break
             fwhm_f_idx = up_loc + down_loc
             fwhm_f = (search_freqs[1]-search_freqs[0])*fwhm_f_idx
             fwhm_t_idx = left_loc + right_loc
