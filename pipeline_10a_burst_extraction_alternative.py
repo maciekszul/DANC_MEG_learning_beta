@@ -130,7 +130,7 @@ for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot
         block_vis_burst = extract_bursts(
             epo_vis[:,ch_ix,:], 
             vis_TF[channel],
-            epo_vis[:,ch_ix,:],
+            np.mean(epo_vis[:,ch_ix,:], axis=0),
             epo_vis_times, 
             freqs[search_range], 
             beta_lims, 
@@ -143,7 +143,7 @@ for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot
         block_mot_burst = extract_bursts(
                 epo_mot[:,ch_ix,:], 
                 mot_TF[channel],
-                epo_mot[:,ch_ix,:],
+                np.mean(epo_mot[:,ch_ix,:], axis=0),
                 epo_mot_times, 
                 freqs[search_range], 
                 beta_lims, 
