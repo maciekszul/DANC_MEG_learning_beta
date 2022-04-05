@@ -69,12 +69,15 @@ epo_slt_mot_vis = list(zip(epo_mot_paths, epo_vis_paths, slt_mot_paths, slt_vis_
 info = read_epochs(epo_mot_paths[0], verbose=False)
 info.pick_types(meg=True, ref_meg=False, misc=False)
 info = info.info
+sfreq = info.sfreq
 freqs = np.linspace(1,120, num=400)
 search_range = np.where((freqs >= 10) & (freqs <= 33))[0]
 beta_lims = [13, 30]
 
 vis_burst_block = {}
 mot_burst_block = {}
+
+
 for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot_vis):
     vis_burst_block[block] = {i:{} for i in info.ch_names}
     mot_burst_block[block] = {i:{} for i in info.ch_names}
@@ -126,7 +129,8 @@ for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot
     for ch_ix, channel in enumerate(info.ch_names):
         block_vis_burst = extract_bursts(
             epo_vis[:,ch_ix,:], 
-            vis_TF[channel], 
+            vis_TF[channel],
+            epo_vis[:,ch_ix,:],
             epo_vis_times, 
             freqs[search_range], 
             beta_lims, 
@@ -138,7 +142,8 @@ for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot
 
         block_mot_burst = extract_bursts(
                 epo_mot[:,ch_ix,:], 
-                mot_TF[channel], 
+                mot_TF[channel],
+                epo_mot[:,ch_ix,:],
                 epo_mot_times, 
                 freqs[search_range], 
                 beta_lims, 
