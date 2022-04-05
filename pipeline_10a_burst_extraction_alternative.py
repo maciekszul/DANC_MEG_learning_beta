@@ -67,10 +67,9 @@ epo_vis_paths.sort()
 epo_slt_mot_vis = list(zip(epo_mot_paths, epo_vis_paths, slt_mot_paths, slt_vis_paths))
 
 info = read_epochs(epo_mot_paths[0], verbose=False)
-sfreq = info.sfreq
 info.pick_types(meg=True, ref_meg=False, misc=False)
 info = info.info
-sfreq = info.sfreq
+sfreq = info["sfreq"]
 freqs = np.linspace(1,120, num=400)
 search_range = np.where((freqs >= 10) & (freqs <= 33))[0]
 beta_lims = [13, 30]
