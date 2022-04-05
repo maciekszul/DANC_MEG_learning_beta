@@ -173,7 +173,7 @@ def extract_bursts(raw_trials, TF, erf, times, search_freqs, band_lims, fooof_th
                     np.max([0, peak_freq_idx - down_loc]),
                     np.min([len(search_freqs) - 1, peak_freq_idx + up_loc])
                 ]
-                filtered = filter_data(raw_signal, sfreq, search_freqs[freq_range[0]], search_freqs[freq_range[1]])
+                filtered = filter_data(raw_signal, sfreq, search_freqs[freq_range[0]], search_freqs[freq_range[1]], verbose=False)
 
                 # Hilbert transform
                 analytic_signal = hilbert(filtered)
