@@ -154,7 +154,8 @@ print(subject_id, "done with bursts")
 vis_results = {i: {j: [] for j in vis_burst_block[0][info.ch_names[0]].keys()} for i in info.ch_names}
 mot_results = {i: {j: [] for j in vis_burst_block[0][info.ch_names[0]].keys()} for i in info.ch_names}
 
-for i in info.ch_names:
+for ch_ix, i in enumerate(info.ch_names):
+    start_time = time.time()
     vis_results[i]["block"] = []
     vis_results[i]["pp_ix"] = []
     for bl in vis_burst_block.keys():
@@ -169,6 +170,23 @@ for i in info.ch_names:
         vis_results[i]["block"].extend(np.tile(bl, len(vis_burst_block[bl][i]["trial"])).astype(int).tolist())
         vis_results[i]["pp_ix"].extend((bl*56 + np.array(vis_burst_block[bl][i]["trial"])).astype(int).tolist())
     
+    vis_json_name = "{}-{}-visual-burst-iter.json".format(channel, subject_id)
+    vis_json_path = op.join(subject, "bursts")
+    files.make_folder(vis_json_path)
+    vis_json_path = op.join(vis_json_path, vis_json_name)
+    with open(vis_json_path, "w") as fp:
+        json.dump(vis_results[i], fp, indent=4)
+    
+    print(
+        "{}|{}|{}|saved in {} min".format(
+            subject_id,
+            str(ch_ix+1).zfill(3),
+            vis_json_path.split(sep)[-1],
+            (time.time() - start_time)/60
+        )
+    )
+
+    start_time = time.time()
     mot_results[i]["block"] = []
     mot_results[i]["pp_ix"] = []
     for bl in mot_burst_block.keys():
@@ -183,19 +201,34 @@ for i in info.ch_names:
         mot_results[i]["block"].extend(np.tile(bl, len(mot_burst_block[bl][i]["trial"])).astype(int).tolist())
         mot_results[i]["pp_ix"].extend((bl*56 + np.array(mot_burst_block[bl][i]["trial"])).astype(int).tolist())
 
+    mot_json_name = "{}-motor-burst-iter.json".format(subject_id)
+    mot_json_path = op.join(subject, "bursts")
+    files.make_folder(mot_json_path)
+    mot_json_path = op.join(mot_json_path, mot_json_name)
+    with open(mot_json_path, "w") as fp:
+        json.dump(mot_results[i], fp, indent=4)
+    
+    print(
+        "{}|{}|{}|saved in {} min".format(
+            subject_id,
+            str(ch_ix+1).zfill(3),
+            mot_json_path.split(sep)[-1],
+            (time.time() - start_time)/60
+        )
+    )
 
-vis_json_name = "{}-visual-burst-iter.json".format(subject_id)
-mot_json_name = "{}-motor-burst-iter.json".format(subject_id)
+# vis_json_name = "{}-visual-burst-iter.json".format(subject_id)
+# mot_json_name = "{}-motor-burst-iter.json".format(subject_id)
 
-vis_json_path = op.join(subject, vis_json_name)
-mot_json_path = op.join(subject, mot_json_name)
+# vis_json_path = op.join(subject, vis_json_name)
+# mot_json_path = op.join(subject, mot_json_name)
 
-print(subject_id, "analysis finished in {} minutes, saving results.".format((time.time() - start_time)/60))
+# print(subject_id, "analysis finished in {} minutes, saving results.".format((time.time() - start_time)/60))
 
-with open(vis_json_path, "w") as fp:
-    json.dump(vis_results, fp, indent=4)
-print("SAVED", subject_id, vis_json_path)
+# with open(vis_json_path, "w") as fp:
+#     json.dump(vis_results, fp, indent=4)
+# print("SAVED", subject_id, vis_json_path)
 
-with open(mot_json_path, "w") as fp:
-    json.dump(mot_results, fp, indent=4)
-print("SAVED", subject_id, mot_json_path)
+# with open(mot_json_path, "w") as fp:
+#     json.dump(mot_results, fp, indent=4)
+# print("SAVED", subject_id, mot_json_path)
