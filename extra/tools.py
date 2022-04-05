@@ -102,7 +102,7 @@ def fwhm_burst_norm(TF, peak):
     return right_loc, left_loc, up_loc, down_loc
 
 
-def extract_bursts(raw_trials, TF, erf, times, search_freqs, band_lims, fooof_thresh, sfreq, w_size=.2):
+def extract_bursts(raw_trials, TF, erf, times, search_freqs, band_lims, fooof_thresh, sfreq, beh_ix=None, w_size=.2):
     bursts={
         'trial': [],
         'waveform': [],
@@ -220,7 +220,12 @@ def extract_bursts(raw_trials, TF, erf, times, search_freqs, band_lims, fooof_th
                                 burst *= -1.0
                                 polarity=1                            
 
-                            bursts['trial'].append(t_idx)
+                            if (type(beh_ix) == list) and (len(beh_ix) == len(TF)):
+                                bursts['trial'].append(int(beh_ix[t_idx]))
+                            else:
+                                print("no beh_match list or not equivalent")
+                                bursts['trial'].append(int(t_idx))
+
                             bursts['waveform'].append(burst)
                             bursts['peak_freq'].append(peak_freq)
                             bursts['peak_amp_iter'].append(peak_amp_iter)
