@@ -77,14 +77,16 @@ beta_lims = [13, 30]
 vis_burst_block = {}
 mot_burst_block = {}
 
+# channels_used = [info.ch_names[0]]
+channels_used = info.ch_names
 
 for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot_vis):
-    vis_burst_block[block] = {i:{} for i in info.ch_names}
-    mot_burst_block[block] = {i:{} for i in info.ch_names}
-    fooof_THR = {i:[] for i in info.ch_names}
-    vis_PSD = {i:[] for i in info.ch_names}
-    mot_TF = {i:[] for i in info.ch_names}
-    vis_TF = {i:[] for i in info.ch_names}
+    vis_burst_block[block] = {i:{} for i in channels_used}
+    mot_burst_block[block] = {i:{} for i in channels_used}
+    fooof_THR = {i:[] for i in channels_used}
+    vis_PSD = {i:[] for i in channels_used}
+    mot_TF = {i:[] for i in channels_used}
+    vis_TF = {i:[] for i in channels_used}
     beh_match_vis = beh_match[epo_vis_p.split(sep)[-1]]
     beh_match_mot = beh_match[epo_mot_p.split(sep)[-1]]
     slt_vis_nps = files.get_files(slt_vis_p, "", ".npy")[2]
@@ -103,14 +105,14 @@ for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot
     for vis_p in slt_vis_nps:
         data = np.load(vis_p)
         print(vis_p.split(sep)[-1])
-        for ch_ix, channel in enumerate(info.ch_names):
+        for ch_ix, channel in enumerate(channels_used):
             TF = data[ch_ix, search_range, :]
             psd = np.mean(data[ch_ix, :, :], axis=1)
             vis_PSD[channel].append(psd)
             vis_TF[channel].append(TF)
         del(data)
     
-    for ch_ix, channel in enumerate(info.ch_names):
+    for ch_ix, channel in enumerate(channels_used):
         vis_psd_avg = np.mean(np.vstack(vis_PSD[channel]), axis=0)
         ff_vis = FOOOF()
         ff_vis.fit(freqs, vis_psd_avg, [1, 120])
@@ -120,13 +122,13 @@ for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot
     for mot_p in slt_mot_nps:
         data = np.load(mot_p)
         print(mot_p.split(sep)[-1])
-        for ch_ix, channel in enumerate(info.ch_names):
+        for ch_ix, channel in enumerate(channels_used):
             TF = data[ch_ix, search_range, :]
             psd = np.mean(data[ch_ix, :, :], axis=1)
             mot_TF[channel].append(TF)
         del(data)
     
-    for ch_ix, channel in enumerate(info.ch_names):
+    for ch_ix, channel in enumerate(channels_used):
         block_vis_burst = extract_bursts(
             epo_vis[:,ch_ix,:], 
             vis_TF[channel],
@@ -156,26 +158,27 @@ for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot
         print(subject_id, ch_ix+1, "/274")
 
 print(subject_id, "done with bursts")
-vis_results = {i: {j: [] for j in vis_burst_block[0][info.ch_names[0]].keys()} for i in info.ch_names}
-mot_results = {i: {j: [] for j in vis_burst_block[0][info.ch_names[0]].keys()} for i in info.ch_names}
+vis_results = {i: {j: [] for j in vis_burst_block[0][channels_used[0]].keys()} for i in channels_used}
+mot_results = {i: {j: [] for j in vis_burst_block[0][channels_used[0]].keys()} for i in channels_used}
 
-for ch_ix, i in enumerate(info.ch_names):
+for ch_ix, i in enumerate(channels_used):
     start_time = time.time()
     vis_results[i]["block"] = []
     vis_results[i]["pp_ix"] = []
     for bl in vis_burst_block.keys():
         for key in vis_burst_block[bl][i]:
-            print(key)
             if key == "waveform":
                 vis_results[i][key].extend(vis_burst_block[bl][i][key].astype(float).tolist())
             elif key == "trial":
+                vis_results[i][key].extend(vis_burst_block[bl][i][key].astype(int).tolist())
+            elif key == "polarity":
                 vis_results[i][key].extend(vis_burst_block[bl][i][key].astype(int).tolist())
             else:
                 vis_results[i][key].extend(vis_burst_block[bl][i][key])
         vis_results[i]["block"].extend(np.tile(bl, len(vis_burst_block[bl][i]["trial"])).astype(int).tolist())
         vis_results[i]["pp_ix"].extend((bl*56 + np.array(vis_burst_block[bl][i]["trial"])).astype(int).tolist())
     
-    vis_json_name = "{}-{}-visual-burst-iter.json".format(channel, subject_id)
+    vis_json_name = "{}-{}-visual-burst-iter.json".format(i, subject_id)
     vis_json_path = op.join(subject, "bursts")
     files.make_folder(vis_json_path)
     vis_json_path = op.join(vis_json_path, vis_json_name)
@@ -196,17 +199,18 @@ for ch_ix, i in enumerate(info.ch_names):
     mot_results[i]["pp_ix"] = []
     for bl in mot_burst_block.keys():
         for key in mot_burst_block[bl][i]:
-            print(key)
             if key == "waveform":
                 mot_results[i][key].extend(mot_burst_block[bl][i][key].astype(float).tolist())
             elif key == "trial":
+                mot_results[i][key].extend(mot_burst_block[bl][i][key].astype(int).tolist())
+            elif key == "polarity":
                 mot_results[i][key].extend(mot_burst_block[bl][i][key].astype(int).tolist())
             else:
                 mot_results[i][key].extend(mot_burst_block[bl][i][key])
         mot_results[i]["block"].extend(np.tile(bl, len(mot_burst_block[bl][i]["trial"])).astype(int).tolist())
         mot_results[i]["pp_ix"].extend((bl*56 + np.array(mot_burst_block[bl][i]["trial"])).astype(int).tolist())
 
-    mot_json_name = "{}-motor-burst-iter.json".format(subject_id)
+    mot_json_name = "{}-{}-motor-burst-iter.json".format(i, subject_id)
     mot_json_path = op.join(subject, "bursts")
     files.make_folder(mot_json_path)
     mot_json_path = op.join(mot_json_path, mot_json_name)
