@@ -76,37 +76,38 @@ def overlap(a,b):
 
 
 def fwhm_burst_norm(TF, peak):
-    right_loc = None
+    right_loc = np.nan
     cand=np.where(TF[peak[0],peak[1]:]<=TF[peak]/2)[0]
     if len(cand):
         right_loc=cand[0]
 
-    up_loc = None
+    up_loc = np.nan
     cand=np.where(TF[peak[0]:, peak[1]] <= TF[peak] / 2)[0]
     if len(cand):
         up_loc=cand[0]
 
-    left_loc = None
+    left_loc = np.nan
     cand=np.where(TF[peak[0],:peak[1]]<=TF[peak]/2)[0]
     if len(cand):
         left_loc = peak[1]-cand[-1]
 
-    down_loc = None
+    down_loc = np.nan
     cand=np.where(TF[:peak[0],peak[1]]<=TF[peak]/2)[0]
     if len(cand):
         down_loc = peak[0]-cand[-1]
 
-    if down_loc is None:
+    if down_loc is np.nan:
         down_loc = up_loc
-    if up_loc is None:
+    if up_loc is np.nan:
         up_loc = down_loc
-    if left_loc is None:
+    if left_loc is np.nan:
         left_loc = right_loc
-    if right_loc is None:
+    if right_loc is np.nan:
         right_loc = left_loc
 
-    horiz = np.min([left_loc, right_loc])
-    vert = np.min([up_loc, down_loc])
+    
+    horiz = np.amin([left_loc, right_loc])
+    vert = np.amin([up_loc, down_loc])
     right_loc = horiz
     left_loc = horiz
     up_loc = vert
