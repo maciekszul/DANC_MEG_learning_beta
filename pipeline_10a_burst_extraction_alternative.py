@@ -80,6 +80,10 @@ mot_burst_block = {}
 # channels_used = [info.ch_names[0]]
 channels_used = info.ch_names
 
+burst_path = op.join(subject, "bursts")
+if op.exists():
+    pass
+
 for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot_vis):
     vis_burst_block[block] = {i:{} for i in channels_used}
     mot_burst_block[block] = {i:{} for i in channels_used}
@@ -111,6 +115,7 @@ for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot
             vis_PSD[channel].append(psd)
             vis_TF[channel].append(TF)
         del(data)
+    print(subject_id, "vis load in ", (time.time() - start_time)/60, "minutes")
     
     for ch_ix, channel in enumerate(channels_used):
         vis_psd_avg = np.mean(np.vstack(vis_PSD[channel]), axis=0)
@@ -127,7 +132,8 @@ for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot
             psd = np.mean(data[ch_ix, :, :], axis=1)
             mot_TF[channel].append(TF)
         del(data)
-    
+    print(subject_id, "vis load in ", (time.time() - start_time)/60, "minutes")
+
     for ch_ix, channel in enumerate(channels_used):
         block_vis_burst = extract_bursts(
             epo_vis[:,ch_ix,:], 
@@ -141,9 +147,7 @@ for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot
             beh_ix=beh_match_vis
         )
         vis_burst_block[block][channel] = block_vis_burst
-        print("epoch shape", epo_mot[:,ch_ix,:].shape)
-        print("TF shape", mot_TF[channel][0].shape)
-        print("FOOOF shape", fooof_THR[channel].shape)
+
         block_mot_burst = extract_bursts(
                 epo_mot[:,ch_ix,:], 
                 mot_TF[channel],
@@ -159,13 +163,12 @@ for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot
         mot_burst_block[block][channel] = block_mot_burst
         print(subject_id, ch_ix+1, "/274")
 
-print(subject_id, "done with bursts")
+print(subject_id, "done with bursts in ", (time.time() - start_time)/60, "minutes")
 vis_results = {i: {j: [] for j in vis_burst_block[0][channels_used[0]].keys()} for i in channels_used}
 mot_results = {i: {j: [] for j in vis_burst_block[0][channels_used[0]].keys()} for i in channels_used}
 
 for ch_ix, i in enumerate(channels_used):
     try:
-        start_time = time.time()
         vis_results[i]["block"] = []
         vis_results[i]["pp_ix"] = []
         for bl in vis_burst_block.keys():
@@ -197,7 +200,7 @@ for ch_ix, i in enumerate(channels_used):
             )
         )
 
-        start_time = time.time()
+
         mot_results[i]["block"] = []
         mot_results[i]["pp_ix"] = []
         for bl in mot_burst_block.keys():
