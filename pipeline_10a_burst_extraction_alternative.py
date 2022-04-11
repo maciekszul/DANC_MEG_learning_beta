@@ -141,7 +141,9 @@ for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot
             beh_ix=beh_match_vis
         )
         vis_burst_block[block][channel] = block_vis_burst
-
+        print("epoch shape", epo_mot[:,ch_ix,:].shape)
+        print("TF shape", mot_TF[channel][0].shape)
+        print("FOOOF shape", fooof_THR[channel].shape)
         block_mot_burst = extract_bursts(
                 epo_mot[:,ch_ix,:], 
                 mot_TF[channel],
