@@ -57,25 +57,3 @@ class FWHM_testing(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
-
-# peak_value = 10
-# peak_loc = [50,50]
-# edge_loc = [50,99]
-# corner_loc = [99,99]
-
-# empty = np.zeros((100,100))
-# single = np.zeros((100,100))
-# single[peak_loc] = peak_value
-# square = np.zeros((100,100))
-# square[40:60,40:60] = peak_value
-# edge = np.zeros((100,100))
-# edge[edge_loc] = peak_value
-# corner = np.zeros((100,100))
-# edge[edge_loc] = peak_value
-
-# print(fwhm_burst_norm(empty, (peak_loc[0], peak_loc[1])))
-# print(fwhm_burst_norm(single, (peak_loc[0], peak_loc[1])))
-# print(fwhm_burst_norm(square, (peak_loc[0], peak_loc[1])))
-# print(fwhm_burst_norm(edge, (edge_loc[0], edge_loc[1])))
-# print(fwhm_burst_norm(corner, (corner_loc[0], corner_loc[1])))
