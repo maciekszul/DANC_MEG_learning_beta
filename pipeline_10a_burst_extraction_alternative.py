@@ -104,7 +104,7 @@ for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot
     
     for vis_p in slt_vis_nps:
         data = np.load(vis_p)
-        print(vis_p.split(sep)[-1])
+        # print(vis_p.split(sep)[-1])
         for ch_ix, channel in enumerate(channels_used):
             TF = data[ch_ix, search_range, :]
             psd = np.mean(data[ch_ix, :, :], axis=1)
@@ -121,7 +121,7 @@ for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot
     
     for mot_p in slt_mot_nps:
         data = np.load(mot_p)
-        print(mot_p.split(sep)[-1])
+        # print(mot_p.split(sep)[-1])
         for ch_ix, channel in enumerate(channels_used):
             TF = data[ch_ix, search_range, :]
             psd = np.mean(data[ch_ix, :, :], axis=1)
