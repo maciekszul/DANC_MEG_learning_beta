@@ -9,7 +9,7 @@ class FWHM_testing(unittest.TestCase):
     def setUp(self):
         self.peak_value = 10
         self.peak_loc = [50,50]
-        self.edge_loc = [50,99]
+        self.edge1_loc = [50,99]
         self.corner_loc = [99,99]
         self.square_loc = [40,60]
         self.empty = np.zeros((100,100))
@@ -20,10 +20,10 @@ class FWHM_testing(unittest.TestCase):
             self.square_loc[0]:self.square_loc[1], 
             self.square_loc[0]:self.square_loc[1]
         ] = self.peak_value
-        self.edge = np.zeros((100,100))
-        self.edge[self.edge_loc] = self.peak_value
+        self.edge1 = np.zeros((100,100))
+        self.edge1[self.edge1_loc] = self.peak_value
         self.corner = np.zeros((100,100))
-        self.edge[self.edge_loc] = self.peak_value
+        self.corner[self.corner_loc] = self.peak_value
 
     def test_empty(self):
         self.assertEqual(
@@ -45,7 +45,7 @@ class FWHM_testing(unittest.TestCase):
     
     def test_edge_peak(self):
         self.assertEqual(
-            fwhm_burst_norm(self.edge, (self.edge_loc[0], self.edge_loc[1])),
+            fwhm_burst_norm(self.edge1, (self.edge1_loc[0], self.edge1_loc[1])),
             (0, 0, 0, 0)
         )
     
