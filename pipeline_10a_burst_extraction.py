@@ -116,7 +116,7 @@ for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot
             vis_PSD[channel].append(psd)
             vis_TF[channel].append(TF)
         del(data)
-    print(subject_id, "vis load in ", (time.time() - start_time)/60, "minutes")
+    print(subject_id, block, "vis load in ", (time.time() - start_time)/60, "minutes")
     
     for ch_ix, channel in enumerate(channels_used):
         vis_psd_avg = np.mean(np.vstack(vis_PSD[channel]), axis=0)
@@ -133,7 +133,7 @@ for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot
             psd = np.mean(data[ch_ix, :, :], axis=1)
             mot_TF[channel].append(TF)
         del(data)
-    print(subject_id, "vis load in ", (time.time() - start_time)/60, "minutes")
+    print(subject_id, block, "mot load in ", (time.time() - start_time)/60, "minutes")
 
     for ch_ix, channel in enumerate(channels_used):
         block_vis_burst = extract_bursts(
@@ -162,7 +162,7 @@ for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot
             )
         
         mot_burst_block[block][channel] = block_mot_burst
-        print(subject_id, ch_ix+1, "/274")
+        print(subject_id, block, ch_ix+1, "/274")
 
 print(subject_id, "done with bursts in ", (time.time() - start_time)/60, "minutes")
 vis_results = {i: {j: [] for j in vis_burst_block[0][channels_used[0]].keys()} for i in channels_used}
