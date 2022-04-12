@@ -81,8 +81,9 @@ mot_burst_block = {}
 channels_used = info.ch_names
 
 burst_path = op.join(subject, "bursts")
-if op.exists():
-    pass
+if op.exists(burst_path):
+    print(subject_id, "burst folder exists, abandon operation")
+    sys.exit()
 
 for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot_vis):
     vis_burst_block[block] = {i:{} for i in channels_used}
