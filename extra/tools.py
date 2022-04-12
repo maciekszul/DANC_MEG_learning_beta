@@ -106,8 +106,8 @@ def fwhm_burst_norm(TF, peak):
         right_loc = left_loc
 
     
-    horiz = np.amin([left_loc, right_loc])
-    vert = np.amin([up_loc, down_loc])
+    horiz = np.nanmin([left_loc, right_loc])
+    vert = np.nanmin([up_loc, down_loc])
     right_loc = horiz
     left_loc = horiz
     up_loc = vert
@@ -164,6 +164,26 @@ def extract_bursts(raw_trials, TF, erf, times, search_freqs, band_lims, fooof_th
 
             # Fit 2D Gaussian and subtract from TF
             right_loc, left_loc, up_loc, down_loc = fwhm_burst_norm(trial_TF_iter, (peak_freq_idx, peak_time_idx))
+
+            # REMOVE DEGENERATE GAUSSIAN
+            vert_isnan = any(np.isnan([up_loc, down_loc]))
+            horiz_isnan = any(np.isnan([right_loc, left_loc]))
+            if vert_isnan:
+                v_sh = int((search_freqs.shape[0] - peak_freq_idx)/2)
+                if v_sh <= 0:
+                    v_sh = 1
+                up_loc = v_sh
+                down_loc = v_sh
+            
+            elif horiz_isnan:
+                h_sh = int((times.shape[0] - peak_time_idx)/2)
+                if h_sh <= 0:
+                    h_sh = 1
+                right_loc = h_sh
+                left_loc = h_sh
+
+            hv_isnan = any([vert_isnan, horiz_isnan])
+
             fwhm_f_idx = up_loc + down_loc
             fwhm_f = (search_freqs[1]-search_freqs[0])*fwhm_f_idx
             fwhm_t_idx = left_loc + right_loc
@@ -173,7 +193,7 @@ def extract_bursts(raw_trials, TF, erf, times, search_freqs, band_lims, fooof_th
             z = peak_amp_iter * gaus2d(x_idx, y_idx, mx=peak_time_idx, my=peak_freq_idx, sx=sigma_t, sy=sigma_f)
             new_trial_TF_iter = trial_TF_iter - z
 
-            if peak_freq>=band_lims[0] and peak_freq<=band_lims[1]:
+            if all([peak_freq>=band_lims[0], peak_freq<=band_lims[1], not hv_isnan]):
                 # Extract raw burst signal
                 dur = [
                     np.max([0, peak_time_idx - left_loc]),
