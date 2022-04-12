@@ -6,8 +6,8 @@ import warnings
 from os import sep
 import os.path as op
 import numpy as np
-from fooof import FOOOF
 import time
+from fooof import FOOOF
 from extra.tools import extract_bursts
 from mne import read_epochs
 from utilities import files
@@ -27,6 +27,8 @@ try:
 except:
     json_file = "settings.json"
     print("USING:", json_file)
+
+start_time = time.time()
 
 # opening a json file
 with open(json_file) as pipeline_file:
@@ -67,154 +69,184 @@ epo_slt_mot_vis = list(zip(epo_mot_paths, epo_vis_paths, slt_mot_paths, slt_vis_
 info = read_epochs(epo_mot_paths[0], verbose=False)
 info.pick_types(meg=True, ref_meg=False, misc=False)
 info = info.info
+sfreq = info["sfreq"]
 freqs = np.linspace(1,120, num=400)
 search_range = np.where((freqs >= 10) & (freqs <= 33))[0]
 beta_lims = [13, 30]
 
-# vis_output = {}
-# mot_output = {}
+vis_burst_block = {}
+mot_burst_block = {}
 
-# for ch_ix, channel in enumerate ([info.ch_names[10]]):
-for ch_ix, channel in enumerate(info.ch_names):
-    start_time = time.time()
-    vis_blocks = {}
-    mot_blocks = {}
-    # for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot_vis[:2]):
-    for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot_vis):
-        beh_match_vis = beh_match[epo_vis_p.split(sep)[-1]]
-        beh_match_mot = beh_match[epo_mot_p.split(sep)[-1]]
-        slt_vis_nps = files.get_files(slt_vis_p, "", ".npy")[2]
-        slt_vis_nps.sort()
-        slt_mot_nps = files.get_files(slt_mot_p, "", ".npy")[2]
-        slt_mot_nps.sort()
-        epo_vis = read_epochs(epo_vis_p, verbose=False)
-        epo_vis = epo_vis.pick_types(meg=True, ref_meg=False, misc=False)
-        epo_mot = read_epochs(epo_mot_p, verbose=False)
-        epo_mot = epo_mot.pick_types(meg=True, ref_meg=False, misc=False)
-        print("start:", "{}/274".format(ch_ix+1), subject_id, block, "vis, beh_match {}, nps {}, epo {}".format(len(beh_match_vis), len(slt_vis_nps), len(epo_vis)))
-        print("start:", "{}/274".format(ch_ix+1), subject_id, block, "mot, beh_match {}, nps {}, epo {}".format(len(beh_match_mot), len(slt_mot_nps), len(epo_mot)))
-        vis_TF = []
-        vis_psd = []
-        for vis_p in slt_vis_nps:
-            data = np.load(vis_p)
+# channels_used = [info.ch_names[0]]
+channels_used = info.ch_names
+
+burst_path = op.join(subject, "bursts")
+if op.exists(burst_path):
+    print(subject_id, "burst folder exists, abandon operation")
+    sys.exit()
+
+for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot_vis):
+    vis_burst_block[block] = {i:{} for i in channels_used}
+    mot_burst_block[block] = {i:{} for i in channels_used}
+    fooof_THR = {i:[] for i in channels_used}
+    vis_PSD = {i:[] for i in channels_used}
+    mot_TF = {i:[] for i in channels_used}
+    vis_TF = {i:[] for i in channels_used}
+    beh_match_vis = beh_match[epo_vis_p.split(sep)[-1]]
+    beh_match_mot = beh_match[epo_mot_p.split(sep)[-1]]
+    slt_vis_nps = files.get_files(slt_vis_p, "", ".npy")[2]
+    slt_vis_nps.sort()
+    slt_mot_nps = files.get_files(slt_mot_p, "", ".npy")[2]
+    slt_mot_nps.sort()
+    epo_vis = read_epochs(epo_vis_p, verbose=False)
+    epo_vis_times = epo_vis.times
+    epo_vis = epo_vis.pick_types(meg=True, ref_meg=False, misc=False)
+    epo_vis = epo_vis.get_data()
+    epo_mot = read_epochs(epo_mot_p, verbose=False)
+    epo_mot_times = epo_mot.times
+    epo_mot = epo_mot.pick_types(meg=True, ref_meg=False, misc=False)
+    epo_mot = epo_mot.get_data()
+    
+    for vis_p in slt_vis_nps:
+        data = np.load(vis_p)
+        # print(vis_p.split(sep)[-1])
+        for ch_ix, channel in enumerate(channels_used):
             TF = data[ch_ix, search_range, :]
-            vis_TF.append(TF)
             psd = np.mean(data[ch_ix, :, :], axis=1)
-            vis_psd.append(psd)
-            del(data)
-
-        mot_TF = []
-        mot_psd = []
-        for mot_p in slt_mot_nps:
-            data = np.load(mot_p)
-            TF = data[ch_ix, search_range, :]
-            mot_TF.append(TF)
-            psd = np.mean(data[ch_ix, :, :], axis=1)
-            mot_psd.append(psd)
-            del(data)
-
-        vis_psd_avg = np.mean(np.vstack(vis_psd), axis=0)
-        mot_psd_avg = np.mean(np.vstack(mot_psd), axis=0)
-
+            vis_PSD[channel].append(psd)
+            vis_TF[channel].append(TF)
+        del(data)
+    print(subject_id, "vis load in ", (time.time() - start_time)/60, "minutes")
+    
+    for ch_ix, channel in enumerate(channels_used):
+        vis_psd_avg = np.mean(np.vstack(vis_PSD[channel]), axis=0)
         ff_vis = FOOOF()
         ff_vis.fit(freqs, vis_psd_avg, [1, 120])
         ap_fit_v = 10 ** ff_vis._ap_fit
+        fooof_THR[channel] = ap_fit_v[search_range].reshape(-1, 1)
+    
+    for mot_p in slt_mot_nps:
+        data = np.load(mot_p)
+        # print(mot_p.split(sep)[-1])
+        for ch_ix, channel in enumerate(channels_used):
+            TF = data[ch_ix, search_range, :]
+            psd = np.mean(data[ch_ix, :, :], axis=1)
+            mot_TF[channel].append(TF)
+        del(data)
+    print(subject_id, "vis load in ", (time.time() - start_time)/60, "minutes")
 
-        vis_raw = epo_vis.get_data()[:,ch_ix,:]
-        mot_raw = epo_mot.get_data()[:,ch_ix,:]
-        fooof_thresh = ap_fit_v[search_range].reshape(-1, 1)
-        sfreq = epo_vis.info['sfreq']
+    for ch_ix, channel in enumerate(channels_used):
         block_vis_burst = extract_bursts(
-            vis_raw, 
-            vis_TF, 
-            epo_vis.times, 
+            epo_vis[:,ch_ix,:], 
+            vis_TF[channel],
+            np.mean(epo_vis[:,ch_ix,:], axis=0),
+            epo_vis_times, 
             freqs[search_range], 
             beta_lims, 
-            fooof_thresh, 
+            fooof_THR[channel], 
             sfreq,
             beh_ix=beh_match_vis
         )
-        vis_blocks[block] = block_vis_burst
-        
+        vis_burst_block[block][channel] = block_vis_burst
+
         block_mot_burst = extract_bursts(
-            mot_raw, 
-            mot_TF, 
-            epo_mot.times, 
-            freqs[search_range], 
-            beta_lims, 
-            fooof_thresh, 
-            sfreq,
-            beh_ix=beh_match_mot
-        )
-        mot_blocks[block] = block_mot_burst
-    print(
-        "{}|{}|bursts detected in {} min".format(
-            subject_id,
-            str(ch_ix+1).zfill(3),
-            (time.time() - start_time)/60
-        )
-    )
+                epo_mot[:,ch_ix,:], 
+                mot_TF[channel],
+                np.mean(epo_mot[:,ch_ix,:], axis=0),
+                epo_mot_times, 
+                freqs[search_range], 
+                beta_lims, 
+                fooof_THR[channel], 
+                sfreq,
+                beh_ix=beh_match_mot
+            )
+        
+        mot_burst_block[block][channel] = block_mot_burst
+        print(subject_id, ch_ix+1, "/274")
 
-    # most of the nonsense here is to clean up the data type for savin in JSON
-    # appending all blocks together to avoid too nested JSON file
-    start_time = time.time()
-    vis_results = {i:[] for i in vis_blocks[0].keys()}
-    vis_results["block"] = []
-    vis_results["pp_ix"] = []
-    for bl in vis_blocks.keys():
-        for key in vis_blocks[bl]:
-            if key == "waveform":
-                vis_results[key].extend(vis_blocks[bl][key].astype(float).tolist())
-            elif key == "trial":
-                vis_results[key].extend(vis_blocks[bl][key].astype(int).tolist())
-            else:
-                vis_results[key].extend(np.array(vis_blocks[bl][key]).astype(float).tolist())
-        vis_results["block"].extend(np.tile(bl, len(vis_blocks[bl]["trial"])).astype(int).tolist())
-        vis_results["pp_ix"].extend((bl*56 + np.array(vis_blocks[bl]["trial"])).astype(int).tolist())
-    # vis_output[channel] = vis_results
-    vis_json_name = "{}-{}-visual-burst-iter.json".format(channel, subject_id)
-    vis_json_path = op.join(subject, "bursts")
-    files.make_folder(vis_json_path)
-    vis_json_path = op.join(vis_json_path, vis_json_name)
-    with open(vis_json_path, "w") as fp:
-        json.dump(vis_results, fp, indent=4)
-    
-    print(
-        "{}|{}|{}|saved in {} min".format(
-            subject_id,
-            str(ch_ix+1).zfill(3),
-            vis_json_path.split(sep)[-1],
-            (time.time() - start_time)/60
-        )
-    )
+print(subject_id, "done with bursts in ", (time.time() - start_time)/60, "minutes")
+vis_results = {i: {j: [] for j in vis_burst_block[0][channels_used[0]].keys()} for i in channels_used}
+mot_results = {i: {j: [] for j in vis_burst_block[0][channels_used[0]].keys()} for i in channels_used}
 
-    start_time = time.time()
-    mot_results = {i:[] for i in mot_blocks[0].keys()}
-    mot_results["block"] = []
-    mot_results["pp_ix"] = []
-    for bl in mot_blocks.keys():
-        for key in mot_blocks[bl]:
-            if key == "waveform":
-                mot_results[key].extend(mot_blocks[bl][key].astype(float).tolist())
-            elif key == "trial":
-                mot_results[key].extend(mot_blocks[bl][key].astype(int).tolist())
-            else:
-                mot_results[key].extend(mot_blocks[bl][key])
-        mot_results["block"].extend(np.tile(bl, len(mot_blocks[bl]["trial"])).astype(int).tolist())
-        mot_results["pp_ix"].extend((bl*56 + np.array(mot_blocks[bl]["trial"])).astype(int).tolist())
-    # mot_output[channel] = mot_results
-    mot_json_name = "{}-motor-burst-iter.json".format(subject_id)
-    mot_json_path = op.join(subject, "bursts")
-    files.make_folder(mot_json_path)
-    mot_json_path = op.join(mot_json_path, mot_json_name)
-    with open(mot_json_path, "w") as fp:
-        json.dump(mot_results, fp, indent=4)
-    
-    print(
-        "{}|{}|{}|saved in {} min".format(
-            subject_id,
-            str(ch_ix+1).zfill(3),
-            mot_json_path.split(sep)[-1],
-            (time.time() - start_time)/60
+for ch_ix, i in enumerate(channels_used):
+    try:
+        vis_results[i]["block"] = []
+        vis_results[i]["pp_ix"] = []
+        for bl in vis_burst_block.keys():
+            for key in vis_burst_block[bl][i]:
+                if key == "waveform":
+                    vis_results[i][key].extend(vis_burst_block[bl][i][key].astype(float).tolist())
+                elif key == "trial":
+                    vis_results[i][key].extend(vis_burst_block[bl][i][key].astype(int).tolist())
+                elif key == "polarity":
+                    vis_results[i][key].extend(vis_burst_block[bl][i][key].astype(int).tolist())
+                else:
+                    vis_results[i][key].extend(vis_burst_block[bl][i][key])
+            vis_results[i]["block"].extend(np.tile(bl, len(vis_burst_block[bl][i]["trial"])).astype(int).tolist())
+            vis_results[i]["pp_ix"].extend((bl*56 + np.array(vis_burst_block[bl][i]["trial"])).astype(int).tolist())
+        
+        vis_json_name = "{}-{}-visual-burst-iter.json".format(i, subject_id)
+        vis_json_path = op.join(subject, "bursts")
+        files.make_folder(vis_json_path)
+        vis_json_path = op.join(vis_json_path, vis_json_name)
+        with open(vis_json_path, "w") as fp:
+            json.dump(vis_results[i], fp, indent=4)
+        
+        print(
+            "{}|{}|{}|saved in {} min".format(
+                subject_id,
+                str(ch_ix+1).zfill(3),
+                vis_json_path.split(sep)[-1],
+                (time.time() - start_time)/60
+            )
         )
-    )
+
+
+        mot_results[i]["block"] = []
+        mot_results[i]["pp_ix"] = []
+        for bl in mot_burst_block.keys():
+            for key in mot_burst_block[bl][i]:
+                if key == "waveform":
+                    mot_results[i][key].extend(mot_burst_block[bl][i][key].astype(float).tolist())
+                elif key == "trial":
+                    mot_results[i][key].extend(mot_burst_block[bl][i][key].astype(int).tolist())
+                elif key == "polarity":
+                    mot_results[i][key].extend(mot_burst_block[bl][i][key].astype(int).tolist())
+                else:
+                    mot_results[i][key].extend(mot_burst_block[bl][i][key])
+            mot_results[i]["block"].extend(np.tile(bl, len(mot_burst_block[bl][i]["trial"])).astype(int).tolist())
+            mot_results[i]["pp_ix"].extend((bl*56 + np.array(mot_burst_block[bl][i]["trial"])).astype(int).tolist())
+
+        mot_json_name = "{}-{}-motor-burst-iter.json".format(i, subject_id)
+        mot_json_path = op.join(subject, "bursts")
+        files.make_folder(mot_json_path)
+        mot_json_path = op.join(mot_json_path, mot_json_name)
+        with open(mot_json_path, "w") as fp:
+            json.dump(mot_results[i], fp, indent=4)
+        
+        print(
+            "{}|{}|{}|saved in {} min".format(
+                subject_id,
+                str(ch_ix+1).zfill(3),
+                mot_json_path.split(sep)[-1],
+                (time.time() - start_time)/60
+            )
+        )
+    except:
+        print("NOT SAVED",subject_id, i)
+
+# vis_json_name = "{}-visual-burst-iter.json".format(subject_id)
+# mot_json_name = "{}-motor-burst-iter.json".format(subject_id)
+
+# vis_json_path = op.join(subject, vis_json_name)
+# mot_json_path = op.join(subject, mot_json_name)
+
+# print(subject_id, "analysis finished in {} minutes, saving results.".format((time.time() - start_time)/60))
+
+# with open(vis_json_path, "w") as fp:
+#     json.dump(vis_results, fp, indent=4)
+# print("SAVED", subject_id, vis_json_path)
+
+# with open(mot_json_path, "w") as fp:
+#     json.dump(mot_results, fp, indent=4)
+# print("SAVED", subject_id, mot_json_path)
