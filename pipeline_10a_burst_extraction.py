@@ -234,19 +234,3 @@ for ch_ix, i in enumerate(channels_used):
         )
     except:
         print("NOT SAVED",subject_id, i)
-
-# vis_json_name = "{}-visual-burst-iter.json".format(subject_id)
-# mot_json_name = "{}-motor-burst-iter.json".format(subject_id)
-
-# vis_json_path = op.join(subject, vis_json_name)
-# mot_json_path = op.join(subject, mot_json_name)
-
-# print(subject_id, "analysis finished in {} minutes, saving results.".format((time.time() - start_time)/60))
-
-# with open(vis_json_path, "w") as fp:
-#     json.dump(vis_results, fp, indent=4)
-# print("SAVED", subject_id, vis_json_path)
-
-# with open(mot_json_path, "w") as fp:
-#     json.dump(mot_results, fp, indent=4)
-# print("SAVED", subject_id, mot_json_path)
