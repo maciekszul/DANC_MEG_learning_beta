@@ -122,8 +122,11 @@ for block, (epo_mot_p, epo_vis_p, slt_mot_p, slt_vis_p) in enumerate(epo_slt_mot
         vis_psd_avg = np.mean(np.vstack(vis_PSD[channel]), axis=0)
         ff_vis = FOOOF()
         ff_vis.fit(freqs, vis_psd_avg, [1, 120])
-        ap_fit_v = 10 ** ff_vis._ap_fit
-        fooof_THR[channel] = ap_fit_v[search_range].reshape(-1, 1)
+        if not ff_vis.has_model():
+            fooof_THR[channel] = fooof_THR[channels_used[ch_ix-1]]
+        else:
+            ap_fit_v = 10 ** ff_vis._ap_fit
+            fooof_THR[channel] = ap_fit_v[search_range].reshape(-1, 1)
     
     for mot_p in slt_mot_nps:
         data = np.load(mot_p)
