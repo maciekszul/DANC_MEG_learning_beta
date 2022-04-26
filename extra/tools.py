@@ -150,6 +150,7 @@ def extract_bursts(raw_trials, TF, erf, times, search_freqs, band_lims, fooof_th
         slope, intercept, r, p, se = linregress(erf, raw_trials[t_idx,:])
         raw_trials[t_idx,:]=raw_trials[t_idx,:]-(intercept+slope*erf)
 
+        isnan_attempts = 0
         while True:
             # Compute noise floor
             thresh = 2 * np.std(trial_TF_iter)
@@ -183,6 +184,11 @@ def extract_bursts(raw_trials, TF, erf, times, search_freqs, band_lims, fooof_th
                 left_loc = h_sh
 
             hv_isnan = any([vert_isnan, horiz_isnan])
+            if hv_isnan:
+                isnan_attempts += 1
+
+            if isnan_attempts > 100:
+                break
 
             fwhm_f_idx = up_loc + down_loc
             fwhm_f = (search_freqs[1]-search_freqs[0])*fwhm_f_idx
