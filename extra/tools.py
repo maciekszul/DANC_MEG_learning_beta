@@ -67,6 +67,13 @@ def pol2cart(radius, angle):
     return [x, y]
 
 
+def many_is_in(multiple, target):
+    check_ = []
+    for i in multiple:
+        check_.append(i in target)
+    return any(check_)
+
+
 def gaus2d(x=0, y=0, mx=0, my=0, sx=1, sy=1):
     return np.exp(-((x - mx)**2. / (2. * sx**2.) + (y - my)**2. / (2. * sy**2.)))
 

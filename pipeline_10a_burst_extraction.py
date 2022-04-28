@@ -8,7 +8,7 @@ import os.path as op
 import numpy as np
 import time
 from fooof import FOOOF
-from extra.tools import extract_bursts
+from extra.tools import extract_bursts, many_is_in
 from mne import read_epochs
 from utilities import files
 
@@ -77,8 +77,10 @@ beta_lims = [13, 30]
 vis_burst_block = {}
 mot_burst_block = {}
 
-# channels_used = [info.ch_names[0]]
-channels_used = info.ch_names
+sens = ["MLC1", "MLC25", "MLC32", "MLC42", "MLC54", "MLC55", "MLC63"]
+channels_used = [i for i in info.ch_names if many_is_in(["MLC"], i)]
+channels_used = [i for i in channels_used if not many_is_in(sens, i)]
+# channels_used = info.ch_names
 
 burst_path = op.join(subject, "bursts")
 if op.exists(burst_path):
