@@ -122,7 +122,7 @@ def fwhm_burst_norm(TF, peak):
     return right_loc, left_loc, up_loc, down_loc
 
 
-def extract_bursts(raw_trials, TF, times, search_freqs, band_lims, fooof_thresh, sfreq, beh_ix=None, w_size=.2):
+def extract_bursts(raw_trials, TF, times, search_freqs, band_lims, fooof_thresh, sfreq, beh_ix=None, w_size=.256):
     bursts = {
         'trial': [],
         'waveform': [],
