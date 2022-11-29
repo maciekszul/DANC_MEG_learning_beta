@@ -101,8 +101,11 @@ for sub in tqdm(json_files.keys()):
             "peak_amp_base": [],
             "fwhm_freq": [],
             "fwhm_time": [],
+<<<<<<< HEAD
             "peak_adjustment": [],
             "polarity": [],
+=======
+>>>>>>> 1ac217156b76c4df585b03c3b73c847928bc371d
             "trial": [],
             "pp_ix": [],
             "block" : []
@@ -114,8 +117,11 @@ for sub in tqdm(json_files.keys()):
             "peak_amp_base": [],
             "fwhm_freq": [],
             "fwhm_time": [],
+<<<<<<< HEAD
             "peak_adjustment": [],
             "polarity": [],
+=======
+>>>>>>> 1ac217156b76c4df585b03c3b73c847928bc371d
             "trial": [],
             "pp_ix": [],
             "block" : []
