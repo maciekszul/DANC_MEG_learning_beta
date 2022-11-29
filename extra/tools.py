@@ -12,6 +12,50 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
+def many_is_in(multiple, target):
+    check_ = []
+    for i in multiple:
+        check_.append(i in target)
+    return any(check_)
+
+
+def cat(options, target):
+    for i in options:
+        if i in target:
+            return i
+
+
+def shuffle_array(array):
+    X_array = array.copy()
+    rows, columns = array.shape
+    for col in range(columns):
+        ixes = np.arange(0,rows)
+        np.random.shuffle(ixes)
+        X_array[:,col] = X_array[:,col][ixes]
+    return X_array
+
+
+def shuffle_array_range(array, ranges):
+    X_array = []
+    for x1, x2 in ranges:
+        X = array[:,x1:x2]
+        np.random.shuffle(X)
+        X_array.append(X)
+    return np.hstack(X_array)
+
+
+def consecutive_margin_ix(data, step=1):
+    ixs = np.split(data, np.where(np.diff(data) != step)[0]+1)
+    ret = []
+    for ix in ixs:
+        start = ix[0]-1
+        stop = ix[-1]+1
+        if start < 0:
+            start = 0
+        ret.append([start, stop])
+    return ret
+
+
 def update_key_value(file, key, value):
     """
     Function to update a key value in a JSON file. If passed
@@ -122,7 +166,7 @@ def fwhm_burst_norm(TF, peak):
     return right_loc, left_loc, up_loc, down_loc
 
 
-def extract_bursts(raw_trials, TF, times, search_freqs, band_lims, fooof_thresh, sfreq, beh_ix=None, w_size=.256):
+def extract_bursts(raw_trials, TF, times, search_freqs, band_lims, fooof_thresh, sfreq, beh_ix=None, w_size=.2):
     bursts = {
         'trial': [],
         'waveform': [],
@@ -274,7 +318,7 @@ def extract_bursts(raw_trials, TF, times, search_freqs, band_lims, fooof_thresh,
                                     len(peak_dists) > 0 and np.min(peak_dists) < np.min(trough_dists)):
                                 burst *= -1.0
                                 polarity = 1
-                            if all((beh_ix != None), (type(beh_ix) == list), (len(beh_ix) == len(TF))):
+                            if all([(beh_ix != None), (type(beh_ix) == list), (len(beh_ix) == len(TF))]):
                                 bursts['trial'].append(int(beh_ix[t_idx]))
                             else:
                                 bursts['trial'].append(int(t_idx))
